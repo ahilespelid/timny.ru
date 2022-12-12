@@ -1,0 +1,35 @@
+---------------------------------------------------
+               Date : 05-09-22
+---------------------------------------------------
+
+payment_methods and payment_method_settings  table whole data update
+
+---------------------------------------------------
+               Date : 06-09-22
+---------------------------------------------------
+
+New Table
+testinomials
+settings
+terms_conditions
+
+Permissions ---> testimonial ,terms_conditions , notification-settings
+
+---------------------------------------------------
+               Date : 07-09-22
+---------------------------------------------------
+
+New Table
+
+currency_code
+
+Entry in general_setting table
+ALTER TABLE `general_setting`  ADD `currency_symbol` VARCHAR(255) NOT NULL DEFAULT '$'  AFTER `company_email`;
+
+---------------------------------------------------
+  ---------------  EXECUTED -------------------
+---------------------------------------------------
+
+ 
+is_archieve
+ALTER TABLE `book_appointment`  ADD `is_archieve` INT NOT NULL DEFAULT '0'  AFTER `refund`;
