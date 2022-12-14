@@ -29,6 +29,7 @@ use App\Http\Controllers\Front\WithDrawRequestController;
 use App\Http\Controllers\Front\UserOfflineController;
 use App\Http\Controllers\PaymentGateway\FlutterWave;
 use App\Http\Controllers\PaymentGateway\Gateway;
+use App\Http\Controllers\PaymentGateway\Moneta;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Models\Role;
 use App\Http\Controllers\Front\SocialAPIController;
@@ -351,3 +352,7 @@ Route::post('/mentee/unarchieved-appointment',[AppointmentBookingController::cla
 
 Route::get('/testinomials',[TestinomialsController::class,'allTestinomials']);
 Route::get('/terms_conditions',[TermsConditionsController::class,'getTermsConditions']);
+
+
+// Монета (платёжная система)
+Route::post('/createProfile',[Moneta::class,'createProfile']);
