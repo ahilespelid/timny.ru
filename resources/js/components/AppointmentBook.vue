@@ -254,11 +254,33 @@
                             </label>
                         </div>
                     </li>
+
+                    <li class="">
+                        <div class="
+                card
+                border-0
+                bg-transparent
+                d-md-flex
+                h-100
+                align-items-center
+                justify-content-center px-2
+              ">
+                            <label class="h-100">
+                                <input type="radio" v-model="payment_method" name="payment_method" value="moneta">
+                                <img src="/assets/images/payment/SafetlyPayment.png" alt="" class="img-fluid" style="object-fit: contain;"/>
+                            </label>
+                        </div>
+                    </li>
+
                 </ul>
             </div>
             <div class="form-card" v-if="payment_method == 'ukassa'">
                 <h6 class="text-muted pt-3">Оплатить через Юкасса</h6>
                 <p>Вы можете сможете оплатить любой банковской картой</p>
+            </div>
+            <div class="form-card" v-if="payment_method == 'moneta'">
+                <h6 class="text-muted pt-3">Безопасная сделка</h6>
+                <p>Средства будут заморожены на транзитном счёте и переведены консультанту только по окончании встречи</p>
             </div>
             <!--<div class="form-card" v-if="payment_method == 'jazzcash'">
                 <h6 class="text-muted pt-3">Enter Mobile Account Detail</h6>
@@ -299,6 +321,7 @@
                 </div>
             </div>
             -->
+            <iframe v-show="moneta.visible" width="600" height="800" :src="moneta.src"></iframe>
             <div class="d-flex pt-5 justify-content-end align-items-center">
                 <button class="btn btn-graish me-2 text-white" @click="$emit('cancelAppointment')">
                     <i class="fa-solid fa-angles-left me-1"></i>
@@ -365,6 +388,10 @@ export default {
             },
             ukassa: {
 
+            },
+            moneta:{
+                src: '',
+                visible: false,
             },
             payment_method: '',
             appointmentNo: "",
@@ -471,6 +498,7 @@ export default {
                 });
         },
         async makePayment() {
+            let moneta = this.moneta;
             var toast = this.$toasted;
             // this.loading = true;
             let total = this.appointment_fee;
@@ -755,6 +783,31 @@ export default {
                             window.location.href = res.data.confirmation_url;
 
                         }
+
+                    })
+                    .catch((error) => {
+
+                        if (error.response) {
+                            for (const property in error.response.data.errors) {
+                                toast.error(error.response.data.errors[property]);
+                            }
+                        }
+
+
+                    });
+            } else if (this.payment_method === 'moneta') {
+                body.redirectAfterConfirm = 'https://timny.ru/mentee/appointment-log';
+                const res = await axios
+                    .post("/api/Moneta/getPaymentFormLink", body, {
+                        headers: headers,
+                    }).then((res) => {
+                        console.log(res.data);
+                            this.loading = false;
+                            //moneta.src = res.data;
+                            //moneta.visible = true;
+                            //window.location.href = res.data;
+                        var assistant = new Assistant.Builder();
+                        assistant.build(res.data);
 
                     })
                     .catch((error) => {

@@ -34,6 +34,7 @@
         "bootstrap-vue": "^2.22.0",
         "datatables.net": "^1.12.1",
         "dotenv": "^16.0.1",
+        "inputmask": "^5.0.7",
         "laravel-echo": "^1.11.7",
         "luxon": "^1.0.0",
         "moment": "^2.29.1",
@@ -51,4 +52,3 @@
         "weekstart": "^1.1.0"
     }
 }
-

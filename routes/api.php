@@ -1,41 +1,43 @@
 <?php
 
 use App\Http\Controllers\Admin\MentorController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Front\UserLoginSignController;
-use App\Http\Controllers\Front\MentorCategoryController;
+use App\Http\Controllers\Admin\PaymentMethodController;
+use App\Http\Controllers\ApiControllers\SettingsController;
+use App\Http\Controllers\ApiControllers\TermsConditionsController;
+use App\Http\Controllers\ApiControllers\TestinomialsController;
 use App\Http\Controllers\Front\AppointmentBookingController;
 use App\Http\Controllers\Front\BlogController;
-use App\Http\Controllers\Front\ContactUsController;
-use App\Http\Controllers\Front\MentorEducationController;
-use App\Http\Controllers\Front\MentorExperienceController;
-use App\Http\Controllers\Front\MentorDegreeController;
-use App\Http\Controllers\Front\MentorOccupationController;
-use App\Http\Controllers\Front\CountryController;
-use App\Http\Controllers\Front\MentorCardController;
-use App\Http\Controllers\Front\MentorSkillController;
-use App\Http\Controllers\Front\WebNotificationController;
 use App\Http\Controllers\Front\ChatController;
+use App\Http\Controllers\Front\ContactUsController;
+use App\Http\Controllers\Front\CountryController;
 use App\Http\Controllers\Front\JazzcashGatewayController;
 use App\Http\Controllers\Front\MenteeProfileController;
+use App\Http\Controllers\Front\MentorCardController;
+use App\Http\Controllers\Front\MentorCategoryController;
+use App\Http\Controllers\Front\MentorDegreeController;
+use App\Http\Controllers\Front\MentorEducationController;
+use App\Http\Controllers\Front\MentorExperienceController;
+use App\Http\Controllers\Front\MentorOccupationController;
 use App\Http\Controllers\Front\MentorScheduleController;
+use App\Http\Controllers\Front\MentorSkillController;
 use App\Http\Controllers\Front\NewsletterController;
 use App\Http\Controllers\Front\RatingController;
 use App\Http\Controllers\Front\SmsController;
+use App\Http\Controllers\Front\SocialAPIController;
+use App\Http\Controllers\Front\UserLoginSignController;
+use App\Http\Controllers\Front\UserOfflineController;
 use App\Http\Controllers\Front\UserOnlineController;
 use App\Http\Controllers\Front\WalletController;
+use App\Http\Controllers\Front\WebNotificationController;
 use App\Http\Controllers\Front\WithDrawRequestController;
-use App\Http\Controllers\Front\UserOfflineController;
 use App\Http\Controllers\PaymentGateway\FlutterWave;
 use App\Http\Controllers\PaymentGateway\Gateway;
-use App\Http\Controllers\PaymentGateway\Moneta;
-use App\Http\Controllers\Admin\PaymentMethodController;
-use App\Models\Role;
-use App\Http\Controllers\Front\SocialAPIController;
-use App\Http\Controllers\ApiControllers\SettingsController;
-use App\Http\Controllers\ApiControllers\TestinomialsController;
-use App\Http\Controllers\ApiControllers\TermsConditionsController;
+use App\Http\Controllers\PaymentGateway\Moneta\Moneta;
+use App\Http\Controllers\PaymentGateway\Moneta\MonetaRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
+
 /*
 /*
 |--------------------------------------------------------------------------
@@ -355,4 +357,21 @@ Route::get('/terms_conditions',[TermsConditionsController::class,'getTermsCondit
 
 
 // Монета (платёжная система)
-Route::post('/createProfile',[Moneta::class,'createProfile']);
+Route::prefix('Moneta')->group(function (){
+    Route::get('getCondition', [Moneta::class, 'getCondition']);
+    Route::get('createAccount', [Moneta::class, 'createAccount']);
+    Route::post('/createProfile',[Moneta::class,'createProfile']);
+    Route::post('/checkPhoneCode', [Moneta::class,'checkPhoneCode']);
+    Route::get('MonetaNotifications', [Moneta::class,'callbackNotify'])->name('MonetaNotifications');
+    Route::post('MonetaNotifications', [Moneta::class,'callbackNotify']);
+    Route::get('asyncRequest/{id}', function($id){
+        $SimplifiedIdentificationRequest = new MonetaRequest([
+            'AsyncRequest' => [
+                'asyncId' => $id
+            ]
+        ]);
+        return $SimplifiedIdentificationRequest->send();
+    });
+    Route::post('getPaymentFormLink', [Moneta::class, 'getPaymentFormLink']);
+});
+

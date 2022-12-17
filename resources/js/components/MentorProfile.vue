@@ -2831,39 +2831,7 @@
                             role="tabpanel"
                             aria-labelledby="pills-acc-tab"
                         >
-                            <div v-if="true" class="row">
-                              <div class="col-lg-8 mb-5">
-                                <h5><b>Регистрация электронного кошелька</b></h5>
-                                <small class="text-muted" style="font-size: 0.7em;line-height: normal;display:block;width: 80%;">Для вывода полученного вознаграждения, необходима регистрация электронного кошелька. Электронный кошелёк будет зарегистрирован в НКО “Монета” на основании Соглашения. Продолжая регистрацию, Вы соглашаетесь с его условиями и Лимитами на проведение операции.</small>
-                                <div class="row mt-3 g-3">
-                                  <div class="col-md-5">
-                                      <h5 class="block w-100"><b>Данные паспорта</b></h5>
-                                      <div class="row g-2 justify-content-start">
-                                        <div class="col-5 d-flex flex-column">
-                                          <small class="mt-2 text-muted ml-1">Серия</small>
-                                          <input class="px-3 py-2 fs-4 text-gray-600 ml-2 text-center" maxlength="4" style="border-radius: .5em;background:#EFEFEF;color:#575757;border: 0;width: 4em;">
-                                        </div>
-                                        <div class="col-7 d-flex flex-column" style="width: max-content;">
-                                          <small class="mt-2 text-muted ml-1">Номер</small>
-                                          <input class="px-3 py-2 fs-4 text-gray-600 text-center" maxlength="6" style="border-radius: .5em;background:#EFEFEF;color:#575757;border: 0;width: 6em;">
-                                        </div>
-                                      </div>
-                                  </div>
-                                  <div class="col-md-7">
-                                      <h5 class="mb-0"><b>Контактный телефон</b></h5>
-                                      <small class="text-muted">на него поступит SMS-сообщение с кодом</small>
-                                      <div class="row g-3 mt-1">
-                                        <div class="col-md-8">
-                                          <input class="px-3 py-2 fs-4 text-gray-600 ml-2" style="border-radius: .5em;background:#EFEFEF;color:#575757;border: 0;">
-                                        </div>
-                                        <div class="col-md-4">
-                                          <button class="px-3 py-2 text-center" style="border-radius: .5em; height:100%;background:#D6CFE5;color:#260076;border: 0;"><b>Подтвердить</b></button>
-                                        </div>
-                                      </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                            <CreateMonetaProfile :User="this.user"></CreateMonetaProfile>
                             <div class="row">
                                 <!-- <div class="col-md-3 border-end-c">
                                     <div class="info">
@@ -3102,10 +3070,11 @@
 <script>
 import loginMixin from "../mixins/loginMixin.js";
 import VueGoogleAutocomplete from "vue-google-autocomplete";
+import CreateMonetaProfile from "./CreateMonetaProfile";
 export default {
     props: ["url"],
     mixins: [loginMixin],
-    components: { VueGoogleAutocomplete },
+    components: { VueGoogleAutocomplete, CreateMonetaProfile },
 
     data() {
         return {

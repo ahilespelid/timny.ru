@@ -22,6 +22,10 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCdCdcUtLMgTMNOc0c_KrXxVhWnVUAaJYw&libraries=places">
     </script>
 
+    <script type="text/javascript" src="https://www.payanyway.ru/assistant-builder">
+    </script>
+
+
     <script>
 
         const firebaseConfig = {

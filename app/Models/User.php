@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Permissions\HasPermissionsTrait;
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -73,6 +75,7 @@ class User extends Authenticatable implements Wallet
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'moneta' => AsCollection::class,
     ];
     public function messages()
     {
