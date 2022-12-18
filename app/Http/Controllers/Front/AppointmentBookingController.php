@@ -771,7 +771,7 @@ class AppointmentBookingController extends Controller
             if($appointment_exist)
             {
                 $commission=Commission::first();
-                $customer_amount=0;
+                $customer_amount = 0;
                 $amount=$commission->amount;
                 if($commission->fixed){
                     $customer_amount=$appointment_exist->payment-$commission->amount;

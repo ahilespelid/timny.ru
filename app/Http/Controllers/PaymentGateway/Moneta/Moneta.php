@@ -5,6 +5,7 @@ namespace App\Http\Controllers\PaymentGateway\Moneta;
 use App\Http\Controllers\Controller;
 use App\Models\BookAppointment;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -14,8 +15,37 @@ use Illuminate\Support\Facades\Validator;
 class Moneta extends Controller
 
 {
+    private const PROTOTYPE_ACCOUNT_ID = 45805242;
 
-    public function getCondition(){
+    /**
+     * Создаёт счёт пользователя и сохраняет его номер в таблице
+     * @param $id int Id пользователя в Timny
+     * @return void
+     * @throws Exception
+     */
+    private function createAccount(int $id): void
+    {
+        $user = User::find($id);
+        $CreateAccountRequest = new MonetaRequest([
+            'CreateAccountRequest' => [
+                'prototypeAccountId' => self::PROTOTYPE_ACCOUNT_ID,
+                'currency' => 'RUB',
+                'unitId' => $user->moneta['unit_id'],
+            ]
+        ]);
+        $req = $CreateAccountRequest->send();
+
+        $user->moneta['account_id'] = $req->Envelope->Body->CreateAccountResponse;
+        $user->save();
+
+    }
+
+    /**
+     * Возвращает состояние регистрации и идентификации пользователя
+     * @return array
+     */
+    public function getCondition(): array
+    {
         $user = User::where('id', Auth::id())->select(['id', 'moneta'])->first();
         if($user->moneta == null){
             return [
@@ -30,25 +60,6 @@ class Moneta extends Controller
             ];
         }
         return $user->moneta;
-    }
-
-    public function createAccount(){
-        $user = User::find(Auth::id());
-        $CreateAccountRequest = new MonetaRequest([
-            'CreateAccountRequest' => [
-                'prototypeAccountId' => 45805242,
-                'currency' => 'RUB',
-                'paymentPassword' => 609278,
-                'unitId' => $user->moneta['unit_id'],
-                'signature' => 'bKHSguefnjs',
-            ]
-        ]);
-        $req = $CreateAccountRequest->send();
-
-        $user->moneta['account_id'] = $req->Envelope->Body->CreateAccountResponse;
-        $user->save();
-
-        return $req;
     }
 
     public function createProfile(Request $request){
@@ -185,6 +196,9 @@ class Moneta extends Controller
         return response()->json($obj);
     }
 
+    /**
+     * @throws Exception
+     */
     public function callbackNotify(Request $request){
         Log::channel('moneta')->debug('CALLBACK: '.json_encode($request->all()));
 
@@ -197,20 +211,9 @@ class Moneta extends Controller
                     $user->moneta['identification_level'] = $request->ACTION;
                     $user->save();
 
-
+//609278
                     if($user->moneta['account_id'] == null){
-                        $CreateAccountRequest = new MonetaRequest([
-                            'CreateAccountRequest' => [
-                                'currency' => 'RUB',
-                                'paymentPassword' => 609278,
-                                'unitId' => $user->moneta['unit_id'],
-                                'signature' => 'bKHSguefnjs',
-                            ]
-                        ]);
-                        $req = $CreateAccountRequest->send();
-
-                        $user->moneta['account_id'] = $req->Envelope->Body->CreateAccountResponse;
-                        $user->save();
+                        $this->createAccount($user->id);
                     }
                     break;
             }
@@ -233,18 +236,7 @@ class Moneta extends Controller
                     $user->save();
 
                     if($user->moneta['account_id'] == null){
-                        $CreateAccountRequest = new MonetaRequest([
-                            'CreateAccountRequest' => [
-                                'currency' => 'RUB',
-                                'paymentPassword' => 609278,
-                                'unitId' => $user->moneta['unit_id'],
-                                'signature' => 'bKHSguefnjs',
-                            ]
-                        ]);
-                        $req = $CreateAccountRequest->send();
-
-                        $user->moneta['account_id'] = $req->Envelope->Body->CreateAccountResponse;
-                        $user->save();
+                        $this->createAccount($user->id);
                     }
 
                 }
@@ -252,7 +244,8 @@ class Moneta extends Controller
         }
     }
 
-    public function getPaymentFormLink(Request $request){
+    public function getPaymentFormLink(Request $request): array
+    {
         $validated = $request->validate([
             'payment_method_code'  => 'required|exists:payment_methods,code|in:moneta',
             'mentee_id'            => 'required|exists:users,id',
@@ -267,14 +260,15 @@ class Moneta extends Controller
         $mentorName = $mentor->first_name . ' ' . $mentor->last_name;
         $mentorName = trim($mentorName);
 
-        $attributes = [
-            'MNT_ID' => 47005365,
-            'MNT_AMOUNT' => $request->total,
-            'MNT_TRANSACTION_ID' => $bookAppointment->id,
-            'MNT_TEST_MODE' => 1,
-            'MNT_DESCRIPTION' => 'Оплата консультации у ' . $mentorName . ' на Timny.ru',
-            'MNT_SUBSCRIBER_ID' => $mentor->id,
+        return [
+            'account' => 47005365,
+            'amount' => $request->total,
+            'transactionId' => $bookAppointment->id,
+            'testMode' => 1,
+            'description' => 'Оплата консультации у ' . $mentorName . ' на Timny.ru',
+            'customParams' => [
+                'mentor_id' => $mentor->id,
+            ]
         ];
-        return 'https://www.payanyway.ru/assistant.widget?' . http_build_query($attributes);
     }
 }

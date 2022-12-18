@@ -34,7 +34,11 @@ use App\Http\Controllers\PaymentGateway\FlutterWave;
 use App\Http\Controllers\PaymentGateway\Gateway;
 use App\Http\Controllers\PaymentGateway\Moneta\Moneta;
 use App\Http\Controllers\PaymentGateway\Moneta\MonetaRequest;
+use App\Models\BookAppointment;
+use App\Models\Commission;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
 
@@ -373,5 +377,29 @@ Route::prefix('Moneta')->group(function (){
         return $SimplifiedIdentificationRequest->send();
     });
     Route::post('getPaymentFormLink', [Moneta::class, 'getPaymentFormLink']);
+    Route::any('paymentNotification', function (Request $request){
+        $md = md5($request->MNT_ID.$request->MNT_TRANSACTION_ID.$request->MNT_OPERATION_ID.$request->MNT_AMOUNT.$request->MNT_CURRENCY_CODE.$request->MNT_SUBSCRIBER_ID.$request->MNT_TEST_MODE.'bKHSguefnjs');
+
+        Log::channel('moneta')->debug('PAYMENT_NOTIFY('.$md.'): '.json_encode($request->all()));
+        if ($request->MNT_SIGNATURE != $md) throw new Exception('Ошибка цифровой подписи');
+
+        $commission=Commission::first();
+
+        if($commission->fixed){
+            $customer_amount = $request->MNT_AMOUNT - $commission->amount;
+        }else {
+            $amount = $request->MNT_AMOUNT * $commission->amount / 100;
+            $customer_amount = $request->MNT_AMOUNT - $amount;
+        }
+        $user = User::find($request->mentor_id);
+        $transaction = $user->deposit($customer_amount, ['MNT_OPERATION_ID' => $request->MNT_OPERATION_ID], false);
+
+        $bookAppointment = BookAppointment::find($request->MNT_TRANSACTION_ID);
+        $bookAppointment->is_paid = true;
+        $bookAppointment->payment_id = $transaction->id;
+        $bookAppointment->save();
+
+        return 'SUCCESS';
+    });
 });
 

@@ -32,4 +32,5 @@ class BookAppointment extends Model
     {
         return $this->tim;
     }
+    
 }
