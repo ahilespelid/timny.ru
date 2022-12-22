@@ -5,7 +5,7 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="bg-secondary ps-4 p-2">
-                            <div class="row">
+                            <div class="row me-1">
                                 <div class="col-md-6">
                                     <p
                                         class="mb-0 text-white d-flex align-items-center"
@@ -22,6 +22,7 @@
                                         >
                                     </p>
                                 </div>
+                                <Withdraws :available_balance="current_balance"></Withdraws>
                                 <div class="col-md-6">
                                     <div
                                         class="d-flex justify-content-md-end align-items-center h-100"
@@ -493,8 +494,10 @@
 </template>
 <script>
 import loginMixin from "../mixins/loginMixin.js";
+import Withdraws from "./Withdraws";
 
 export default {
+    components: {Withdraws},
     props: ["url"],
     mixins: [loginMixin],
     data() {

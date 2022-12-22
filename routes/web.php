@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\CommissionController;
 use App\Http\Controllers\Admin\ContactUsController;
 use App\Http\Controllers\PaymentGateway\UKassa;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -224,7 +226,6 @@ Route::get('/payTm-order/{appointmentID}/{mobile_no}/{email}',[AppointmentBookin
 Route::post('/payTm-callback',[AppointmentBookingController::class,'payTmpaymentCallback']);
 //Admin Auth
 Route::middleware('auth')->group(function () {
-
     Route::namespace('Admin')->prefix('admin')->name('admin.')->group(function () {
         //create Admin User ->middleware('can:add-admin-user')
         Route::get('/create-user', [LoginController::class, 'createUser'])->name('createUser');
@@ -246,6 +247,11 @@ Route::middleware('auth')->group(function () {
 
 
         // Route for Mentor Category
+
+        Route::get('payment-conflicts', function (){
+            if(!User::find(Auth::id())->hasRole('admin')) abort(403);
+           return view('new_admin.payment_conflicts.payment_conflicts');
+        })->name('payment-conflicts');
 
         Route::get('mentor/category/list', [MentorCategoryController::class, 'showMentorCategoryList'])->name('mentor.category.list');
         Route::get('mentor/category/add', [MentorCategoryController::class, 'addMentorCategory'])->name('mentor.category.add');

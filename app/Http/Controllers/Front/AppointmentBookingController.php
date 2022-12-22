@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use Bavix\Wallet\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\BookAppointment;
 use Illuminate\Support\Facades\Validator;
@@ -770,19 +771,21 @@ class AppointmentBookingController extends Controller
             // dd($appointment_exist);
             if($appointment_exist)
             {
-                $commission=Commission::first();
-                $customer_amount = 0;
-                $amount=$commission->amount;
-                if($commission->fixed){
-                    $customer_amount=$appointment_exist->payment-$commission->amount;
-                }else {
-                    $amount=$appointment_exist->payment*$commission->amount/100;
-                    $customer_amount=$appointment_exist->payment-$amount;
-                }
-                $user=User::find($appointment_exist->mentor_id);
-                $user->deposit($customer_amount);
-                $admin_user=User::find(1);
-                $admin_user->deposit($amount);
+//                $commission=Commission::first();
+//                $customer_amount = 0;
+//                $amount=$commission->amount;
+//                if($commission->fixed){
+//                    $customer_amount=$appointment_exist->payment-$commission->amount;
+//                }else {
+//                    $amount=$appointment_exist->payment*$commission->amount/100;
+//                    $customer_amount=$appointment_exist->payment-$amount;
+//                }
+                $user = User::find($appointment_exist->mentor_id);
+                $transaction = Transaction::find($appointment_exist->payment_id);
+                $user->confirm($transaction);
+//                $user->deposit($customer_amount);
+//                $admin_user=User::find(1);
+//                $admin_user->deposit($amount);
                 $completedAppointments=BookAppointment::where('id',$request->appointment_id)->update(['appointment_status'=>2]);
 
                 $obj=["Status"=>true,"success"=>1,"msg"=>"Successfully Mark as Completed Appointments"];

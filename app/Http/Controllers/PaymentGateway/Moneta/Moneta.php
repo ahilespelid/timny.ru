@@ -44,8 +44,9 @@ class Moneta extends Controller
      * Возвращает состояние регистрации и идентификации пользователя
      * @return array
      */
-    public function getCondition(): array
+    public function getCondition()
     {
+        if (!Auth::check()) abort(401);
         $user = User::where('id', Auth::id())->select(['id', 'moneta'])->first();
         if($user->moneta == null){
             return [
@@ -62,17 +63,14 @@ class Moneta extends Controller
         return $user->moneta;
     }
 
+    /**
+     * Регистрирует профиль пользователя в Монете, добавляет его данные и отправляет SMS для подтверждения
+     * @param Request $request
+     * @return array[] Состояние пользователя (getCondition)
+     * @throws Exception
+     */
     public function createProfile(Request $request){
-        $validator = Validator::make($request->all(), [
-            'passport_series' => 'required',
-            'passport_number' => 'required',
-            'phone' => 'required',
-           // 'user_id'=>'required',
-        ]);
-        if ($validator->fails()) {
-            $obj=["Status"=>false,"success"=>0,"errors"=>$validator->errors()];
-            return response()->json($obj);
-        }
+
 
         $user = User::find(Auth::id());
 
@@ -144,20 +142,17 @@ class Moneta extends Controller
             $user->save();
         }
 
-        $obj=["Status"=>true,"success"=>1,"data"=>[],"msg"=>"Пользователь зарегистрирован. Направлен код подтверждения."];
 
-        return response()->json($obj);
+        return ['condition' => $user->moneta];
     }
 
+    /**
+     * Проверяет SMS-код и отправляет запрос на упрощённую идентификацию пользователя
+     * @param Request $request
+     * @return array
+     * @throws Exception
+     */
     public function checkPhoneCode(Request $request){
-        $validator = Validator::make($request->all(), [
-            'code' => 'required',
-          //  'user_id'=>'required',
-        ]);
-        if ($validator->fails()) {
-            $obj=["Status"=>false,"success"=>0,"errors"=>$validator->errors()];
-            return response()->json($obj);
-        }
         $user = User::find(Auth::id());
 
         if($user->moneta['phone_confirmed'] != 'confirmed'){
@@ -187,16 +182,22 @@ class Moneta extends Controller
             ]
         ]);
         $req = $SimplifiedIdentificationRequest->send();
-        $user->moneta['asyncId'] = $req->Envelope->Body->AsyncResponse->asyncId;
-        $user->moneta['identification_status'] = 'processing';
+
+        if ($req->Envelope->Body->fault->detail->faultDetail == '500.7.11'){
+            $user->moneta['identification_status'] = 'identified';
+        }else{
+            $user->moneta['asyncId'] = $req->Envelope->Body->AsyncResponse->asyncId;
+            $user->moneta['identification_status'] = 'processing';
+        }
         $user->save();
 
-        $obj=["Status"=>true,"success"=>1,"data"=>[],"msg"=>"Номер телефона подтверждён. Заявка на прохождение идентификации направлена."];
 
-        return response()->json($obj);
+        return ['condition' => $user->moneta];
     }
 
     /**
+     * Обрабатывает уведомления Монеты
+     * @param Request $request
      * @throws Exception
      */
     public function callbackNotify(Request $request){
@@ -244,6 +245,60 @@ class Moneta extends Controller
         }
     }
 
+    /**
+     * Проводит возврат по операции
+     * @param $operation_id int Id операции в системе Монеты
+     * @return object
+     * @throws Exception
+     */
+    public static function returnByOperationId(int $operation_id): object
+    {
+        $SimplifiedIdentificationRequest = new MonetaRequest([
+            'RefundRequest' => [
+                'transactionId' => $operation_id,
+            ]
+        ]);
+        return $SimplifiedIdentificationRequest->send();
+    }
+
+    /**
+     * Создаёт запрос на выплату
+     * @param Request $request
+     * @return string
+     * @throws Exception
+     */
+    public function createWithdrawOrder(Request $request){
+        $user = User::find(Auth::id());
+        $request->validate([
+            'withdrawSum'  => 'required|max:'.$user->balance,
+        ]);
+
+        $operationInfo = new MonetaModel();
+        $operationInfo->setAttribute('PAYMENTTOKEN', '0'.$user->moneta['operation_id']);
+
+
+        $PaymentRequest = new MonetaRequest([
+            'PaymentRequest' => [
+                'payer' => $user->moneta['account_id'],
+                'payee' => 'card',
+                'amount' => $request->withdrawSum,
+                'isPayerAmount' => true,
+                'operationInfo' => $operationInfo->toArray(),
+                'paymentPassword' => '249729261'
+            ]
+        ]);
+        $response = $PaymentRequest->send();
+        $attributes = collect($response->Envelope->Body->PaymentResponse->attribute)->pluck('value', 'key');
+        if($attributes['statusid'] == 'SUCCEED') $user->withdraw($attributes['sourceamountcompensation']);
+
+        return 'SUCCESS';
+    }
+
+    /**
+     * Возвращает параметры для формирования платёжной формы
+     * @param Request $request
+     * @return array
+     */
     public function getPaymentFormLink(Request $request): array
     {
         $validated = $request->validate([
@@ -264,7 +319,7 @@ class Moneta extends Controller
             'account' => 47005365,
             'amount' => $request->total,
             'transactionId' => $bookAppointment->id,
-            'testMode' => 1,
+            'testMode' => 0,
             'description' => 'Оплата консультации у ' . $mentorName . ' на Timny.ru',
             'customParams' => [
                 'mentor_id' => $mentor->id,

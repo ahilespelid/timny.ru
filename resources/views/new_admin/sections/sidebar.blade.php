@@ -197,6 +197,15 @@
             </a>
           </li>
           @endpermission
+            <li class="nav-item">
+                <a href="{{route('admin.payment-conflicts')}}" class="nav-link">
+                    <i class="nav-icon fas fa-user-tie"></i>
+                    <p>
+                        Конфликты оплаты
+                        {{-- <span class="right badge badge-danger">New</span> --}}
+                    </p>
+                </a>
+            </li>
           @permission('mentor-degree')
           <li class="nav-item">
             <a href="{{route('admin.mentor.degree.list')}}" class="nav-link">

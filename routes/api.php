@@ -30,12 +30,14 @@ use App\Http\Controllers\Front\UserOnlineController;
 use App\Http\Controllers\Front\WalletController;
 use App\Http\Controllers\Front\WebNotificationController;
 use App\Http\Controllers\Front\WithDrawRequestController;
+use App\Http\Controllers\MeetingConfirmationController;
 use App\Http\Controllers\PaymentGateway\FlutterWave;
 use App\Http\Controllers\PaymentGateway\Gateway;
 use App\Http\Controllers\PaymentGateway\Moneta\Moneta;
 use App\Http\Controllers\PaymentGateway\Moneta\MonetaRequest;
 use App\Models\BookAppointment;
 use App\Models\Commission;
+use App\Models\MeetingConflict;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -288,8 +290,8 @@ Route::get('/general_settings',[SettingsController::class,'generalSettings']);
     //rating exist for Appointment
     Route::get('/rating-exist-appointment',[RatingController::class,'ratingExistAppointment']);
 
-    //mark appointment Completed
-    Route::post('/mark-appointment-as-complete', [AppointmentBookingController::class, 'markAppointmentAsComplete']);
+    //mark appointment Completed todo:удалить, если всё будет хорошо работать (комм от 20.12.22)
+    // Route::post('/mark-appointment-as-complete', [AppointmentBookingController::class, 'markAppointmentAsComplete']);
     //get mentor limited Details
     Route::get('/get-mentor-details',[UserLoginSignController::class,'getMentorPublicDetails']);
     //Wallet Standard Features
@@ -305,8 +307,8 @@ Route::get('/general_settings',[SettingsController::class,'generalSettings']);
     //deposit Amount into Wallet Using Jazzcash
     Route::post('/deposit-wallet-jazzcash',[JazzcashGatewayController::class,'createChargeForWallet']);
 
-    //WithDraw REquest from mentor for Admin
-    Route::post('/withdraw-request',[WithDrawRequestController::class,'createWithDrawRequest']);
+    //WithDraw REquest from mentor for Admin todo:удалить, если всё будет хорошо работать (комм от 20.12.22)
+    // Route::post('/withdraw-request',[WithDrawRequestController::class,'createWithDrawRequest']);
 
     //Wallet Credit Transfer on Appointment book
     Route::post('/wallet-credit-transfer',[WalletController::class,'transferCredit']);
@@ -377,11 +379,21 @@ Route::prefix('Moneta')->group(function (){
         return $SimplifiedIdentificationRequest->send();
     });
     Route::post('getPaymentFormLink', [Moneta::class, 'getPaymentFormLink']);
+    Route::post('createWithdrawOrder', [Moneta::class, 'createWithdrawOrder']);
     Route::any('paymentNotification', function (Request $request){
         $md = md5($request->MNT_ID.$request->MNT_TRANSACTION_ID.$request->MNT_OPERATION_ID.$request->MNT_AMOUNT.$request->MNT_CURRENCY_CODE.$request->MNT_SUBSCRIBER_ID.$request->MNT_TEST_MODE.'bKHSguefnjs');
 
         Log::channel('moneta')->debug('PAYMENT_NOTIFY('.$md.'): '.json_encode($request->all()));
         if ($request->MNT_SIGNATURE != $md) throw new Exception('Ошибка цифровой подписи');
+
+        if($request->addCardMode != null || $request->addCardMode == 1){
+            Log::channel('moneta')->debug('Режим добавления карты');
+            $user = User::where('moneta->account_id', $request->MNT_ID)->first();
+            $user->moneta['operation_id'] = $request->MNT_OPERATION_ID;
+            $user->save();
+            Moneta::returnByOperationId($request->MNT_OPERATION_ID);
+            return 'SUCCESS';
+        }
 
         $commission=Commission::first();
 
@@ -403,3 +415,21 @@ Route::prefix('Moneta')->group(function (){
     });
 });
 
+Route::post('mark-appointment-as-complete', [MeetingConfirmationController::class, 'MentorConfirm']);
+Route::post('customerConfirm', [MeetingConfirmationController::class, 'CustomerConfirm']);
+Route::post('resolveConflict', [MeetingConfirmationController::class, 'ResolveConflict']);
+Route::get('/cancelAppointment/{id}', function ($id){
+    MeetingConfirmationController::CancelMeeting(BookAppointment::find($id));
+});
+Route::get('conflicts', function(){
+   return MeetingConflict::with(['bookAppointment'])->get();
+});
+Route::get('conflicts/{id}/inProcess', function($id){
+    $mc = MeetingConflict::where('id', $id)->with(['bookAppointment'])->first();
+    $mc->status = 'processing';
+    $mc->save();
+    return MeetingConflict::with(['bookAppointment'])->get();
+});
+Route::get('conflicts/{id}', function($id){
+    return MeetingConflict::where('id', $id)->with(['bookAppointment'])->get();
+});

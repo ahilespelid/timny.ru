@@ -58,9 +58,9 @@ class MonetaRequest
         Log::channel('moneta')->debug('ОТВЕТ: '.$res);
         $ret = json_decode($res);
         if (isset($ret->Envelope->Body->fault)){
-            if ($ret->Envelope->Body->fault->detail->faultDetail == '500.3.2.48'){
+            if ($ret->Envelope->Body->fault->detail->faultDetail == '500.3.2.48' || $ret->Envelope->Body->fault->detail->faultDetail == '500.7.11'){
                 return $ret;
-            }else {
+            } else {
                 throw new Exception($ret->Envelope->Body->fault->faultstring);
             }
         }

@@ -1641,9 +1641,8 @@ export default {
         id: id,
       };
       const res = await axios
-        .post("/api/changeAppointmentStatus", params)
+        .get("/api/cancelAppointment/"+id)
         .then((res) => {
-          if (res.data.Status) {
             toast.success(res.data.msg);
             this.sendRejectedAppointmentNotification(
               this.allPendingAppointmentsFilter[index].mentee_id
@@ -1652,11 +1651,10 @@ export default {
                this.allPendingAppointmentsFilter[index].mentee.phone
             );
             this.allPendingAppointmentsFilter.splice(index, 1);
-          }
-          if (!res.data.Status) {
-            toast.error("Пожалуйста, заполните все поля...");
-          }
-        });
+        })
+          .catch((err) => {
+             toast.error(err.response.data.message);
+          });
     },
     async sendAcceptedAppointmentNotification(mentee_id) {
       const params = {

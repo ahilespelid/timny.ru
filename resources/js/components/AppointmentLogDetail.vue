@@ -499,18 +499,16 @@ export default {
         status: 3,
         id: id,
       };
-      const res = await axios
-        .post("/api/changeAppointmentStatus", params)
+    const res = await axios
+        .get("/api/cancelAppointment/"+id)
         .then((res) => {
-          if (res.data.Status) {
-            toast.success(res.data.msg);
+            toast.success('Встреча отменена');
             self.sendRejectedAppointmentNotification();
             self.sendRejectedAppointmentSms();
             self.appointmentDetails();
-          }
-          if (!res.data.Status) {
-            toast.error("Пожалуйста, заполните все поля...");
-          }
+        })
+        .catch((err) => {
+            toast.error(err.response.data.message);
         });
     },
     async sendRejectedAppointmentSms() {
@@ -559,9 +557,9 @@ export default {
       var toast = this.$toasted;
       var self = this;
       const params = {
-        token: 123,
-        appointment_id: this.appointment_id,
-      };
+              BookAppointmentId: appointment_id,
+              ConfirmationStatus: true,
+          };
        const headers = {
         "Content-Type": "multipart/form-data",
       };
@@ -586,15 +584,10 @@ export default {
       const res = await axios
         .post("/api/mark-appointment-as-complete", params)
         .then((res) => {
-          if (res.data.Status) {
-            toast.success(res.data.msg);
+            toast.success("Встреча завершена");
             self.sendCompletedAppointmentNotification();
             self.appointmentDetails();
             self.closeChat();
-          }
-          if (!res.data.Status) {
-            toast.error("Пожалуйста, заполните все поля...");
-          }
         });
     },
      async sendCompletedAppointmentNotification()

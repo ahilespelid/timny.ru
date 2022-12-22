@@ -393,7 +393,7 @@ export default {
                 src: '',
                 visible: false,
             },
-            payment_method: '',
+            payment_method: 'moneta',
             appointmentNo: "",
             old_appointment: "",
             loading: false,
@@ -451,7 +451,6 @@ export default {
             const headers = {
                 "Content-Type": "multipart/form-data",
             };
-
             let formData = new FormData();
             formData.append("book_file", this.formData.book_file);
             formData.append("token", this.formData.token);
@@ -481,7 +480,8 @@ export default {
                             this.showAppointmentSection = true;
                             window.location.href = this.url + "/mentee/appointment-log"
                         } else {
-                            this.showPayment = true;
+                            //this.showPayment = true;
+                            self.makePayment();
                             this.showAppointmentSection = false;
                             this.fetchPaymentMethods();
                         }
@@ -808,7 +808,11 @@ export default {
                             //window.location.href = res.data;
                         var assistant = new Assistant.Builder();
                         assistant.build(res.data);
-
+                        assistant.setOnSuccessCallback(function(operationId, transactionId) {
+                            // todo: здесь можно сделать что угодно – например,
+                            // перенаправить на другую страницу:
+                            location.replace("/mentee/appointment-log");
+                        });
                     })
                     .catch((error) => {
 

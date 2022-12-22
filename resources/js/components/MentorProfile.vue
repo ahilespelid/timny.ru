@@ -2832,7 +2832,7 @@
                             aria-labelledby="pills-acc-tab"
                         >
                             <CreateMonetaProfile :User="this.user"></CreateMonetaProfile>
-                            <div class="row">
+                            <div v-if="false" class="row">
                                 <!-- <div class="col-md-3 border-end-c">
                                     <div class="info">
                                         <span

@@ -62,6 +62,74 @@
         </div>
       </div>
     </div>
+      <div
+          class="modal fade"
+          id="ratingModal"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="ratingModalLabel"
+          aria-hidden="true"
+      >
+          <div class="modal-dialog" role="document">
+              <div class="modal-content border-0">
+                  <div class="modal-header bg-primary text-white">
+                      <h5 class="modal-title" id="ratingModalLabel"> {{$t('appointment_detail.btn.rate_now')}}</h5>
+                      <button
+                          type="button"
+                          class="btn-close"
+                          data-bs-dismiss="modal"
+                          aria-label="Close"
+                      ></button>
+                  </div>
+                  <div class="modal-body">
+                      <div class="form-group">
+                          <label for="exampleFormControlSelect1" class="text-dark fw-bold fs-5">{{$t('appointment_detail.btn.select_rating')}}</label>
+                          <div class="rating">
+                              <ul class="rate-area ps-0">
+                                  <input type="radio" id="5" v-model="ratings.rate" name="rating" value="5" /><label for="5" title="Amazing">5 звезд</label>
+                                  <input type="radio" id="4" v-model="ratings.rate" name="rating" value="4" /><label for="4" title="Good">4 звезды</label>
+                                  <input type="radio" id="3" v-model="ratings.rate" name="rating" value="3" /><label for="3" title="Average">3 звезды</label>
+                                  <input type="radio" id="2" v-model="ratings.rate" name="rating" value="2" /><label for="2" title="Not Good">2 звезды</label>
+                                  <input type="radio" id="1" v-model="ratings.rate" name="rating" value="1" /><label for="1" title="Bad">1 звезда</label>
+                              </ul>
+
+                          </div>
+                      </div>
+                      <br>
+                      <br>
+                      <div class="form-group  mt-3">
+                          <h5 for="review_message" class="text-dark fw-bold fs-5"> {{$t('appointment_detail.btn.comment')}}</h5>
+                          <textarea
+                              class="form-control mt-3"
+                              v-model="ratings.comment"
+                              id="review_message"
+                              rows="3"
+                              :placeholder="$t('appointment_detail.btn.placeholder_comment')"
+                          ></textarea>
+                      </div>
+                  </div>
+                  <div class="modal-footer row">
+                      <button
+                          type="button"
+                          class="btn btn-secondary col w-50"
+                          v-on:click="markAppointmentAsCompleted(false)"
+                      >
+                          Встреча не состоялась
+                          <br><small>удержать вознаграждение</small>
+                      </button>
+                      <button
+                          type="button"
+                          id="submit_data"
+                          v-on:click="markAppointmentAsCompleted(true)"
+                          class="btn btn-primary col w-50"
+                      >
+                          Встреча состоялась
+                          <br><small>перечислить вознаграждение</small>
+                      </button>
+                  </div>
+              </div>
+          </div>
+      </div>
   </div>
 </template>
 
@@ -90,10 +158,20 @@ export default {
       remoteStreams: [],
       isMentee: false,
       timeInRange: true,
-      leftCommunication:false
+      leftCommunication:false,
+        ratings: {
+            rate: "",
+            comment: "",
+        },
+        modal:{},
     };
   },
-  watch: {
+    mounted() {
+    this.modal = new bootstrap.Modal(document.getElementById('ratingModal'), {
+            keyboard: false
+        })
+      },
+    watch: {
      showVideoCount: {
      handler(newVal, oldVal){  // here having access to the new and old value
 
@@ -112,6 +190,49 @@ export default {
   }
   },
   methods: {
+      markAppointmentAsCompleted(stat) {
+          const params = {
+              BookAppointmentId: this.id,
+              ConfirmationStatus: stat,
+          };
+          let self = this;
+      axios.post("/api/customerConfirm", params)
+              .then((res) => {
+                 // toast.success("Встреча завершена");
+                 // self.sendCompletedAppointmentNotification();
+                 // self.closeChat();
+                  self.submitRating();
+              });
+      },
+      async submitRating() {
+          if (!this.ratings.rate || !this.ratings.comment) {
+            //  this.$toasted.error("Поле оценки и комментария обязательно");
+          } else {
+              $("#ratingModal").modal("hide");
+             // var toast = this.$toasted;
+              var self = this;
+              const params = {
+                  token: 123,
+                  mentee_id: this.User.user_id,
+                  mentor_id: this.mentor_id,
+                  rating: this.ratings.rate,
+                  comments: this.ratings.comment,
+                  appointment_id: this.appointment_id,
+              };
+              const res = await axios
+                  .post("/api/create-rating", params)
+                  .then((res) => {
+                      if (res.data.Status) {
+                       //   toast.success(res.data.msg);
+                          self.appointmentDetails();
+                          window.location='/mentee/appointment-log'
+                      }
+                      if (!res.data.Status) {
+                        //  toast.error("Пожалуйста, заполните все поля...");
+                      }
+                  });
+          }
+      },
     async joinEvent() {
       var self = this;
 
@@ -164,11 +285,18 @@ export default {
       }
     },
     leaveEvent() {
+        let self = this;
         this.leftCommunication=true;
       this.disableJoin = false;
       this.rtc
         .leaveChannel()
-        .then(() => {})
+        .then(() => {
+            if (this.User.role == "Mentee") {
+                self.modal.show();
+            }
+
+            console.log('Пользователь покинул чат');
+        })
         .catch((err) => {
           log("leave error", err);
         });

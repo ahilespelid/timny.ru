@@ -13,17 +13,17 @@
               ><span class="hide-menu">Dashboard</span></a
             >
           </li>
-          @permission('add-admin-user')
-        <li class="sidebar-item">
-            <a
-              class="sidebar-link waves-effect waves-dark sidebar-link"
-              href="{{route('admin.listUser')}}"
-              aria-expanded="false"
-              ><i class="mdi mdi-account"></i
-              ><span class="hide-menu">Admin Users</span></a
-            >
-          </li>
-          @endpermission
+            @permission('add-admin-user')
+            <li class="sidebar-item">
+                <a
+                    class="sidebar-link waves-effect waves-dark sidebar-link"
+                    href="{{route('admin.listUser')}}"
+                    aria-expanded="false"
+                ><i class="mdi mdi-account"></i
+                    ><span class="hide-menu">Admin Users</span></a
+                >
+            </li>
+            @endpermission
           <li class="sidebar-item">
             <a
               class="sidebar-link waves-effect waves-dark sidebar-link"

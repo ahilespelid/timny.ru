@@ -49,6 +49,7 @@ Vue.component('appointment-log-page', require('./components/AppointmentLog.vue')
 Vue.component('appointment-mentee-log-page', require('./components/AppointmentMenteeLog.vue').default);
 Vue.component('appointment-live', require('./components/AppointmentLive.vue').default);
 Vue.component('appointment-live-payment', require('./components/AppointmentLivePayment.vue').default);
+Vue.component('payment-conflicts', require('./components/PaymentConflicts.vue').default);
 
 Vue.component('appointment-log-detail-page', require('./components/AppointmentLogDetail.vue').default);
 Vue.component('appointment-mentee-log-detail-page', require('./components/AppointmentMenteeLogDetail.vue').default);

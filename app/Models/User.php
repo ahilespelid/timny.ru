@@ -3,7 +3,8 @@
 namespace App\Models;
 
 use App\Permissions\HasPermissionsTrait;
-use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Bavix\Wallet\Interfaces\Confirmable;
+use Bavix\Wallet\Traits\CanConfirm;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,9 +24,12 @@ use App\Models\Country;
 use Bavix\Wallet\Traits\HasWallet;
 use Bavix\Wallet\Interfaces\Wallet;
 
-class User extends Authenticatable implements Wallet
+/**
+ * @method static find(int $id)
+ */
+class User extends Authenticatable implements Wallet, Confirmable
 {
-    use HasApiTokens, HasFactory, Notifiable,HasPermissionsTrait,HasWallet;
+    use HasApiTokens, HasFactory, Notifiable, HasPermissionsTrait, HasWallet, CanConfirm;
 
     /**
      * The attributes that are mass assignable.
