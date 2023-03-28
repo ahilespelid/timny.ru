@@ -173,8 +173,8 @@ export default {
         token: 123,
         user_id: this.receiver_id,
         body: message,
-        title: "New Message",
-        link: "",
+        title: "Вам пришло новое сообщение",
+        link: this.url,
       };
       const res = await axios
         .post("/api/send-web-notification", params)

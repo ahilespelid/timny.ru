@@ -797,10 +797,11 @@ export default {
         }
     },
     created() {
-        this.checkLoggedIn();
-        if (this.is_loggedIn) {
-            window.location.href = this.url;
-        }
+        // Очень глупая схема аутентификации
+        // this.checkLoggedIn();
+        // if (this.is_loggedIn) {
+        //     window.location.href = this.url;
+        // }
         this.fetchTermsAndConditions()
     },
     mounted() {

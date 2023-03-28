@@ -1,5 +1,5 @@
 <template>
-    <div v-if="condition.identification_status === 'no_identified'" class="flex flex-col gap-3 bg-gray-100 rounded-2xl lg:w-1/2 p-6">
+    <div v-if="condition.identification_status === 'no_identified' || condition.identification_status === 'identification_failed'" class="flex flex-col gap-3 bg-gray-100 rounded-2xl lg:w-1/2 p-6">
         <div class="flex flex-col gap-3">
             <div class="flex flex-col">
                 <span class="text-xl text-gray-700 font-semibold mb-1">Регистрация электронного кошелька</span>
@@ -29,7 +29,7 @@
             </div>
 
             <div v-if="condition.phone_confirmed !== 'confirmed'" class="flex flex-col gap-2">
-                <div v-if="!condition.phone_confirmed" class="flex flex-col">
+                <div v-if="condition.phone_confirmed != 'sms_send'" class="flex flex-col">
                     <span class="text-lg text-gray-700 font-semibold -mb-1">Номер телефона</span>
                     <span class="text-gray-500 text-xs mb-2">отправим на него SMS с кодом {{moneta.code}}</span>
                     <div class="flex flex-col md:flex-row gap-3">
@@ -42,7 +42,7 @@
                     <span class="text-gray-500 text-xs mb-2">введите код, отправленный на номер {{moneta.phone}}</span>
                     <div class="flex flex-col md:flex-row gap-3 items-center">
                         <input @input="checkCode" :class="{'animate-pulse bg-gray-50':loading, 'bg-green-100': success, 'bg-white': !success}" data-inputmask="'mask': '9 9 9 9 9 9'" class="px-2 py-1 md:mt-0 mt-2 rounded-lg text-2xl max-w-full font-semibold outline-1 outline-transparent focus-visible:outline-blue-500 duration-200 text-center w-[6em]">
-                        <button @click="createMonetaAccount" v-if="timer.is_expired" class="px-2 py-1 text-blue-500 text-xs flex items-center hover:text-blue-700 duration-200 md:w-min">Отправить повторно</button>
+                        <button @click="createMonetaAccount(true)" v-if="timer.is_expired" class="px-2 py-1 text-blue-500 text-xs flex items-center hover:text-blue-700 duration-200 md:w-min">Отправить повторно</button>
                         <div v-else class="w-32 text-xs text-gray-500 md:text-left text-center">Отправить повторно можно будет через {{timer.minute}}:{{timer.second.length === 1 ? '0'+timer.second : timer.second}}</div>
                     </div>
                 </div>
@@ -96,9 +96,10 @@ import axios from "axios";
 export default {
     name: "CreateMonetaProfile",
     props:{
-        User:Object,
+        //User:Object,
     },
     mounted() {
+        this.User = localStorage.getItem('User');
         Inputmask().mask(document.querySelectorAll("input"));
         let self = this;
         axios.get('/api/Moneta/getCondition')
@@ -165,13 +166,13 @@ export default {
                     self.error = error.response.data.message;
                 });
         },
-        createMonetaAccount(){
+        createMonetaAccount(again = false){
             let self = this;
             axios.post('/api/Moneta/createProfile', {
                 // user_id: this.User.user_id,
                 passport_series: this.moneta.passport_series,
                 passport_number: this.moneta.passport_number,
-                phone: Inputmask.unmask(this.moneta.phone, { mask: "+9 999 999 99 99" }),
+                phone: again ? null : Inputmask.unmask(this.moneta.phone, { mask: "+9 999 999 99 99" }),
             })
                 .then(function (data){
                     console.log(data.data);

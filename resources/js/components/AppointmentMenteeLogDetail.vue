@@ -124,6 +124,13 @@
                     >{{$t('appointment_detail.status.cancel')}}
                     </span>
                   </div>
+                    <div class="pt-2">
+                        <label class="text-primary" v-if="appointment.questions" > Вопрос: </label>
+                        <p
+                        >{{appointment.questions }}
+                        </p>
+
+                    </div>
                   <div class="pt-2">
                    <label class="text-primary" v-if="appointment.notes_consultant " > Записи : </label>
                    <p
@@ -166,7 +173,7 @@
                         class="btn btn-primary me-4"
                         data-bs-toggle="modal"
                         data-bs-target="#ratingModal"
-                        v-if="appointment.appointment_status == 2 && appointment.rating==null"
+                        v-if="appointment.need_confirm === true && appointment.rating === null"
                       >
                          {{$t('appointment_detail.btn.rate_now')}}
                       </button>
@@ -207,6 +214,7 @@
                       appointment.appointment_status == 1 ||
                       appointment.appointment_type_id == 2
                     "
+                    @leaveAppoinment="showRatingModal"
                     :id="appointment_id"
                     :appointment_type_id="appointment.appointment_type_id"
                     :showVideoCount="showVideoCount"
@@ -285,20 +293,24 @@
           </div>
         </div>
       </div>
+      <MeetEndModal @success="meetingSuccess" @fault="meetingFault" @close="ratingModal = false" :show="ratingModal"></MeetEndModal>
 
   </section>
 </template>
 <script>
 import loginMixin from "../mixins/loginMixin.js";
 import VideoChat from "./VideoChat.vue";
+import MeetEndModal from "./MeetEndModal.vue";
 export default {
   props: ["url", "appointment_id"],
   mixins: [loginMixin],
   components: {
+      MeetEndModal,
     VideoChat,
   },
   data() {
     return {
+        ratingModal:false,
         appointment: {},
         payment:"",
       appointmentNo:"",
@@ -327,12 +339,119 @@ export default {
     };
   },
   methods: {
+      showRatingModal(){
+        this.ratingModal = true;
+      },
+      getDate(date){
+          date = new Date(date);
+
+          var options = {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+          };
+
+          return date.toLocaleString("ru", options);
+      },
+      getTime(time){
+          time = new Date(time);
+
+          var options = {
+              hour: 'numeric',
+              minute: 'numeric',
+          };
+
+          return time.toLocaleString("ru", options);
+      },
+      meetingSuccess(feedback){
+          this.appointmentDetails();
+          feedback = feedback[0];
+          if (!feedback.rating || !feedback.feedback) {
+              this.$toasted.error("Поле оценки и комментария обязательно");
+          }else{
+              let toast = this.$toasted;
+              let self = this;
+
+              const params = {
+                  BookAppointmentId: this.appointment.id,
+                  ConfirmationStatus: true,
+              };
+
+              axios.post("/api/customerConfirm", params)
+                  .then(function (){
+                      const params2 = {
+                          token: 123,
+                          mentee_id: self.User.user_id,
+                          mentor_id: self.mentor_id,
+                          rating: feedback.rating,
+                          comments: feedback.feedback,
+                          appointment_id: self.appointment.id,
+                      };
+
+                      axios.post("/api/create-rating", params2)
+                          .then(function (res) {
+                              if (res.data.Status) {
+                                  toast.success(res.data.msg);
+                                  self.ratingModal = false;
+                                  self.appointmentDetails();
+                                  window.location='/mentee/appointment-log'
+                              }
+                              if (!res.data.Status) {
+                                  toast.error("Пожалуйста, заполните все поля...");
+                              }
+                          })
+                  });
+
+
+          }
+      },
+      meetingFault(feedback){
+          this.appointmentDetails();
+          feedback = feedback[0];
+          if (!feedback.rating || !feedback.feedback) {
+              this.$toasted.error("Поле оценки и комментария обязательно");
+          }else{
+              let toast = this.$toasted;
+              let self = this;
+
+              const params = {
+                  BookAppointmentId: this.appointment.id,
+                  ConfirmationStatus: false,
+              };
+
+              axios.post("/api/customerConfirm", params)
+                  .then(function (){
+                      const params2 = {
+                          token: 123,
+                          mentee_id: self.User.user_id,
+                          mentor_id: self.mentor_id,
+                          rating: feedback.rating,
+                          comments: feedback.feedback,
+                          appointment_id: self.appointment.id,
+                      };
+
+                      axios.post("/api/create-rating", params2)
+                          .then(function (res) {
+                              if (res.data.Status) {
+                                  toast.success(res.data.msg);
+                                  self.ratingModal = false;
+                                  self.appointmentDetails();
+                                  window.location='/mentee/appointment-log'
+                              }
+                              if (!res.data.Status) {
+                                  toast.error("Пожалуйста, заполните все поля...");
+                              }
+                          })
+                  });
+
+
+          }
+      },
       async submitRating() {
       if (!this.ratings.rate || !this.ratings.comment) {
         this.$toasted.error("Поле оценки и комментария обязательно");
       } else {
         $("#ratingModal").modal("hide");
-        var toast = this.$toasted;
         var self = this;
         const params = {
           token: 123,
@@ -362,6 +481,7 @@ export default {
     closeChat() {
       this.chat = false;
       this.appointmentDetails();
+      this.showRatingModal();
     },
       async appointmentDetails() {
       const params = {

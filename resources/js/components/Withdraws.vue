@@ -1,5 +1,5 @@
 <template>
-    <div v-if="!cardAdded" class="w-full mx-auto mt-5 p-6 rounded-2xl bg-orange-50 flex flex-col md:flex-row gap-6 justify-between items-center">
+    <div v-if="!cardAdded && isIdentified" class="w-full mx-auto mt-5 p-6 rounded-2xl bg-orange-50 flex flex-col md:flex-row gap-6 justify-between items-center">
         <div class="flex flex-col md:flex-row gap-5 items-center">
             <div class="w-16 h-16 text-orange-50 rounded-full bg-orange-400 flex justify-center items-center">
                 <svg class="fill-current w-full p-3" viewBox="0 0 63 44" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -12,6 +12,20 @@
             </div>
         </div>
         <button @click="addCard" class="h-max text-white rounded-lg px-2 py-2 bg-indigo-700 font-semibold text-sm hover:bg-indigo-500 duration-200">Привязать</button>
+    </div>
+    <div v-else-if="!isIdentified" class="w-full mx-auto mt-5 p-6 rounded-2xl bg-red-50 flex flex-col md:flex-row gap-6 justify-between items-center">
+        <div class="flex flex-col md:flex-row gap-5 items-center">
+            <div class="w-16 h-16 text-red-50 rounded-full bg-red-400 flex justify-center items-center">
+                <svg class="stroke-current w-full p-3" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 4L38 38M38 4L4 38" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="flex flex-col">
+                <span class="font-semibold text-xl text-red-400">Для вывода вознаграждения нужен подтверждённый аккаунт</span>
+                <span class="text-sm mt-1 text-zinc-500">Пройдите идентификацию в разделе "Реквизиты Банковского Счета" Вашего профиля.</span>
+            </div>
+            <a href="/mentor-profile" class="h-max text-white rounded-lg px-2 py-2 bg-red-600 font-semibold text-sm hover:bg-red-400 duration-200">В профиль</a>
+        </div>
     </div>
     <div v-else-if="!createWithdrawOrderFailed && !withdrawIsOrdered" class="w-full mx-auto mt-5 p-6 rounded-2xl bg-indigo-50 flex flex-col md:flex-row gap-6 justify-between items-center">
         <div class="flex flex-col md:flex-row gap-5 items-center">
@@ -29,7 +43,10 @@
                 <input @change="checkWithdrawSum" class="p-2 rounded-lg outline-1 outline-transparent focus-visible:outline-indigo-400 duration-300" v-model="withdrawSum">
             </div>
         </div>
-        <button @click="createWithdrawOrder" :class="{'placeholder':load}" class="h-max text-white rounded-lg px-2 py-2 bg-indigo-700 font-semibold text-sm hover:bg-indigo-500 duration-200">Заказать</button>
+        <div class="flex flex-col gap-1">
+            <button @click="createWithdrawOrder" :class="{'placeholder':load}" class="h-max text-white rounded-lg px-2 py-2 bg-indigo-700 font-semibold text-sm hover:bg-indigo-500 duration-200">Заказать</button>
+            <button @click="cardAdded = false">Изменить карту</button>
+        </div>
     </div>
     <div v-else-if="withdrawIsOrdered" class="w-full mx-auto mt-5 p-6 rounded-2xl bg-green-50 flex flex-col md:flex-row gap-6 justify-between items-center">
         <div class="flex flex-col md:flex-row gap-5 items-center">
@@ -78,6 +95,7 @@ export default {
             accountId:0,
             error:'Попробуйте позже',
             load: false,
+            isIdentified: false,
         }
     },
     mounted() {
@@ -86,6 +104,7 @@ export default {
             .then(function (data){
                 self.cardAdded = data.data.operation_id !== null;
                 self.accountId = data.data.account_id;
+                self.isIdentified = data.data.identification_status === 'identified';
             });
     },
     methods:{

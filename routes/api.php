@@ -38,11 +38,14 @@ use App\Http\Controllers\PaymentGateway\Moneta\MonetaRequest;
 use App\Models\BookAppointment;
 use App\Models\Commission;
 use App\Models\MeetingConflict;
+use App\Models\NewTransaction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\ValidationException;
 
 /*
 /*
@@ -59,6 +62,27 @@ use Illuminate\Support\Facades\URL;
 // Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 //     return $request->user();
 // });
+
+// Выдача токена
+Route::post('/getToken', function (Request $request) {
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+        //'device_name' => 'required',
+    ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (! $user || ! Hash::check($request->password, $user->password)) {
+        throw ValidationException::withMessages([
+            'email' => ['Учётные данные неверны.'],
+        ]);
+    }
+    $r['token'] = $user->createToken($request->device_name)->plainTextToken;
+    $r['user'] = $user;
+
+    return response()->json($r);
+});
 
 //Set Status online or offline And Broadcast TO channel
 Route::post('/changeOnlineStatus', [UserOfflineController::class,'update'])->name('changeOnlineStatus');
@@ -364,10 +388,10 @@ Route::get('/terms_conditions',[TermsConditionsController::class,'getTermsCondit
 
 // Монета (платёжная система)
 Route::prefix('Moneta')->group(function (){
-    Route::get('getCondition', [Moneta::class, 'getCondition']);
+    Route::get('getCondition', [Moneta::class, 'getCondition'])->middleware(['auth.frontend:sanctum']);
     Route::get('createAccount', [Moneta::class, 'createAccount']);
-    Route::post('/createProfile',[Moneta::class,'createProfile']);
-    Route::post('/checkPhoneCode', [Moneta::class,'checkPhoneCode']);
+    Route::post('createProfile',[Moneta::class,'createProfile']);
+    Route::post('checkPhoneCode', [Moneta::class,'checkPhoneCode']);
     Route::get('MonetaNotifications', [Moneta::class,'callbackNotify'])->name('MonetaNotifications');
     Route::post('MonetaNotifications', [Moneta::class,'callbackNotify']);
     Route::get('asyncRequest/{id}', function($id){
@@ -391,20 +415,16 @@ Route::prefix('Moneta')->group(function (){
             $user = User::where('moneta->account_id', $request->MNT_ID)->first();
             $user->moneta['operation_id'] = $request->MNT_OPERATION_ID;
             $user->save();
-            Moneta::returnByOperationId($request->MNT_OPERATION_ID);
+            //Moneta::returnByOperationId($request->MNT_OPERATION_ID);
             return 'SUCCESS';
         }
 
-        $commission=Commission::first();
-
-        if($commission->fixed){
-            $customer_amount = $request->MNT_AMOUNT - $commission->amount;
-        }else {
-            $amount = $request->MNT_AMOUNT * $commission->amount / 100;
-            $customer_amount = $request->MNT_AMOUNT - $amount;
-        }
-        $user = User::find($request->mentor_id);
-        $transaction = $user->deposit($customer_amount, ['MNT_OPERATION_ID' => $request->MNT_OPERATION_ID], false);
+        $transaction = NewTransaction::where('operation_id', $request->MNT_OPERATION_ID)->first();
+        $transaction->amount = $request->MNT_AMOUNT + $request->MNT_FEE;
+        $transaction->customer_amount = $request->MNT_AMOUNT;
+        $transaction->status = 'holding';
+        $transaction->payment_object = json_encode($request->all());
+        $transaction->save();
 
         $bookAppointment = BookAppointment::find($request->MNT_TRANSACTION_ID);
         $bookAppointment->is_paid = true;
@@ -413,6 +433,13 @@ Route::prefix('Moneta')->group(function (){
 
         return 'SUCCESS';
     });
+    Route::any('returnProcessed', function (Request $request){
+        $md = md5($request->MNT_ID.$request->MNT_TRANSACTION_ID.$request->MNT_OPERATION_ID.$request->MNT_AMOUNT.$request->MNT_CURRENCY_CODE.$request->MNT_SUBSCRIBER_ID.$request->MNT_TEST_MODE.'bKHSguefnjs');
+
+        Log::channel('moneta')->debug('RETURN_NOTIFY('.$md.'): '.json_encode($request->all()));
+        if ($request->MNT_SIGNATURE != $md) throw new Exception('Ошибка цифровой подписи');
+    });
+    Route::get('getAvailableBalance', [Moneta::class, 'getAvailableBalance']);
 });
 
 Route::post('mark-appointment-as-complete', [MeetingConfirmationController::class, 'MentorConfirm']);
@@ -432,4 +459,8 @@ Route::get('conflicts/{id}/inProcess', function($id){
 });
 Route::get('conflicts/{id}', function($id){
     return MeetingConflict::where('id', $id)->with(['bookAppointment'])->get();
+});
+
+Route::get('transactions/{user}', function (User $user){
+    return NewTransaction::where('recipient_id', $user->id)->get();
 });

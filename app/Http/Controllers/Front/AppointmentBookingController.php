@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Models\MeetingConfirmation;
 use Bavix\Wallet\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\BookAppointment;
@@ -160,9 +161,16 @@ class AppointmentBookingController extends Controller
         if ($request->token==$token){
             $pendingAppointments='';
             if($request->has('status')){
-                $pendingAppointments=BookAppointment::with('mentor')->where([['mentee_id',$request->mentee_id]
-                ,['appointment_status',$request->status],['is_paid',1]
-                ])->orderBy('id','DESC')->paginate(20);
+                if($request->status != 3){
+                    $pendingAppointments=BookAppointment::with('mentor')->where([['mentee_id',$request->mentee_id]
+                        ,['appointment_status',$request->status],['is_paid',1]
+                    ])->orderBy('id','DESC')->paginate(20);
+                }else{
+                    $pendingAppointments=BookAppointment::with('mentor')->where([['mentee_id',$request->mentee_id]
+                        ,['appointment_status',$request->status]
+                    ])->orderBy('id','DESC')->paginate(20);
+                }
+
             // $pendingAppointments=BookAppointment::with('mentor')->where('mentee_id',$request->mentee_id)->orderBy('id','DESC')->paginate(20);
 
             $appointments=$pendingAppointments->items();
@@ -206,6 +214,7 @@ class AppointmentBookingController extends Controller
                   }
 
             }
+
             $obj=["Status"=>true,"success"=>1,"data"=>["appointments"=>$pendingAppointments],"msg"=>"Got  Appointments Successfully"];
 
             return response()->json($obj);
@@ -356,12 +365,25 @@ class AppointmentBookingController extends Controller
         $token="123";
         if ($request->token==$token){
             //,['is_paid',1]
-            $completedAppointments=BookAppointment::with(['mentee'=>function($q)
-            {
-                $q->with(['mentee'=>function($q){
-                    $q->select('identity_hidden','user_id');
-                }]);
-            }])->where([['mentor_id',$request->mentor_id],['appointment_status',$request->status],['is_paid',1],['is_archieve' , 0]])->orderBy('id', 'desc')->paginate(20);
+
+
+            if($request->status != 3){
+                $completedAppointments=BookAppointment::with(['mentee'=>function($q)
+                {
+                    $q->with(['mentee'=>function($q){
+                        $q->select('identity_hidden','user_id');
+                    }]);
+                }])->where([['mentor_id',$request->mentor_id],['appointment_status',$request->status],['is_paid',1],['is_archieve' , 0]])->orderBy('id', 'desc')->paginate(20);
+
+            }else{
+                $completedAppointments=BookAppointment::with(['mentee'=>function($q)
+                {
+                    $q->with(['mentee'=>function($q){
+                        $q->select('identity_hidden','user_id');
+                    }]);
+                }])->where([['mentor_id',$request->mentor_id],['appointment_status',$request->status],['is_archieve' , 0]])->orderBy('id', 'desc')->paginate(20);
+            }
+
 
             foreach($completedAppointments->items() as $completedAppointment){
                 if(!is_null($completedAppointment->date)){
@@ -447,7 +469,7 @@ class AppointmentBookingController extends Controller
                     if(isset($schedule_id)){
                         $end_time = MentorScheduleSlot::select('end_time')->where('schedule_id',$schedule_id->id)->where('start_time',$completedAppointments->time)->first();
 
-                    $completedAppointments['end_time']=$end_time->end_time;
+                        if($end_time) $completedAppointments['end_time']=$end_time->end_time;
 
                     }else {
                         $completedAppointments['end_time']='';
@@ -464,6 +486,7 @@ class AppointmentBookingController extends Controller
                 if($visibility){
                     $completedAppointments['mentee_visibility']=$visibility->identity_hidden;
                 }
+                $completedAppointments['need_confirm'] = MeetingConfirmation::where('book_appointment_id', $completedAppointments->id)->whereNull('customer_confirmation')->exists();
 
 
                 $obj=["Status"=>true,"success"=>1,"data"=>["appointment"=>$completedAppointments],"msg"=>"Appointment detail got Successfully"];

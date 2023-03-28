@@ -234,7 +234,7 @@
                                                     <option value="" selected>Выбрать день</option>
                                                     <option v-for="day in availableDays" :key="day.id" :value="day.day"
                                                         v-if="day.is_holiday == 0">
-                                                        {{ day.day }}
+                                                        {{ day.day_name }}
                                                     </option>
                                                 </select>
                                             </div>
@@ -441,7 +441,7 @@
                                                     <option value="" selected>Выбрать день</option>
                                                     <option v-for="day in availableDays" :key="day.id" :value="day.day"
                                                         v-if="day.is_holiday == 0">
-                                                        {{ day.day }}
+                                                        {{ day.day_name }}
                                                     </option>
                                                 </select>
                                             </div>
@@ -647,7 +647,7 @@
                                                     <option value="" selected>Выбрать день</option>
                                                     <option v-for="day in availableDays" :key="day.id" :value="day.day"
                                                         v-if="day.is_holiday == 0">
-                                                        {{ day.day }}
+                                                        {{ day.day_name }}
                                                     </option>
                                                 </select>
                                             </div>
@@ -852,7 +852,7 @@
                                                     <option value="" selected>Выбрать день</option>
                                                     <option v-for="day in availableDays" :key="day.id" :value="day.day"
                                                         v-if="day.is_holiday == 0">
-                                                        {{ day.day }}
+                                                        {{ day.day_name }}
                                                     </option>
                                                 </select>
                                             </div>
@@ -957,7 +957,7 @@
                                                     <div class="row">
                                                         <div class="col-auto">
                                                             <span class="text-dark fw-bold">День:</span>
-                                                            <span class="ms-1 text-capitalize">{{ schedule.day }}</span>
+                                                            <span class="ms-1 text-capitalize">{{ schedule.locale_day }}</span>
                                                         </div>
                                                         <div class="col-auto">
                                                             <span class="text-dark fw-bold">Стоимость:</span><span

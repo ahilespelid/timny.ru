@@ -104,7 +104,7 @@
                               v-model="ratings.comment"
                               id="review_message"
                               rows="3"
-                              :placeholder="$t('appointment_detail.btn.placeholder_comment')"
+                              placeholder="Текст отзыва"
                           ></textarea>
                       </div>
                   </div>
@@ -191,23 +191,33 @@ export default {
   },
   methods: {
       markAppointmentAsCompleted(stat) {
-          const params = {
-              BookAppointmentId: this.id,
-              ConfirmationStatus: stat,
-          };
-          let self = this;
-      axios.post("/api/customerConfirm", params)
-              .then((res) => {
-                 // toast.success("Встреча завершена");
-                 // self.sendCompletedAppointmentNotification();
-                 // self.closeChat();
-                  self.submitRating();
-              });
+          if (!this.ratings.rate || !this.ratings.comment) {
+              this.$toasted.error("Поле оценки и комментария обязательно");
+          }else{
+              const params = {
+                  BookAppointmentId: this.id,
+                  ConfirmationStatus: stat,
+              };
+              let self = this;
+              axios.post("/api/customerConfirm", params)
+                  .then((res) => {
+                      //toast.success("Встреча завершена");
+                      const params = {
+                          token: 123,
+                          user_id: this.mentee_id,
+                          body: "Нажмите здесь, чтобы увидеть вашу встречу",
+                          title: "Ваша встреча завершена.",
+                          link:
+                              "/mentee/appointment-log-detail/"+this.appointment_id,
+                      };
+                      axios.post("/api/send-web-notification", params)
+                          .then((res) => {});
+                      //self.closeChat();
+                  });
+              self.submitRating();
+          }
       },
       async submitRating() {
-          if (!this.ratings.rate || !this.ratings.comment) {
-            //  this.$toasted.error("Поле оценки и комментария обязательно");
-          } else {
               $("#ratingModal").modal("hide");
              // var toast = this.$toasted;
               var self = this;
@@ -231,7 +241,6 @@ export default {
                         //  toast.error("Пожалуйста, заполните все поля...");
                       }
                   });
-          }
       },
     async joinEvent() {
       var self = this;
@@ -333,11 +342,12 @@ export default {
       }
     },
     async sendAudioCallNotification() {
+        let mentor = this.fetchUserData(this.mentor_id);
       const params = {
         token: 123,
         user_id: this.mentee_id,
-        body: "Please Join the Call",
-        title: "Audio Call From Mentor",
+        body: "Пожалуйста, примите звонок",
+        title: "Аудиозвонок от ",//+mentor.last_name+' '+mentor.first_name,
         channel_token:  this.option.token,
         channel_name:  this.option.channel,
         call_type: 'audio',
@@ -354,11 +364,12 @@ export default {
         .then((res) => {});
     },
     async sendVideoCallNotification() {
+        let mentor = this.fetchUserData(this.mentor_id);
       const params = {
         token: 123,
         user_id: this.mentee_id,
-        body: "Please Join the Call",
-        title: "Video Call From Mentor",
+        body: "Пожалуйста, примите звонок",
+        title: "Видеозвонок от ",//+mentor.last_name+' '+mentor.first_name,
         channel_token:  this.option.token,
         channel_name:  this.option.channel,
         call_type: 'video',
@@ -392,7 +403,29 @@ export default {
         },
          currentDateTime() {
       return moment().format('MMMM Do YYYY, h:mm:ss a')
-    }
+    },
+      fetchUserData(id) {
+          const params = {
+              token: 123,
+              user_id: id,
+          };
+          let profile = {};
+          axios.get("/api/getUserById", {
+              params,
+          })
+              .then(function (data){
+                  profile.first_name = data.data.userDetail.first_name
+                      ? data.data.userDetail.first_name
+                      : "";
+                  profile.last_name = data.data.userDetail.last_name
+                      ? data.data.userDetail.last_name
+                      : "";
+                  return profile;
+              })
+              .catch(function () {
+                  return false;
+              });
+      },
   },
   created() {
     this.checkLoggedIn();

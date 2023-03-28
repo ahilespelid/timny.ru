@@ -438,6 +438,35 @@ class MentorScheduleController extends Controller
                 ['appointment_type_id', $request->appointment_type_id],
             ])->orderBy('id', 'ASC')->get();
             if (count($mentorSchedules) > 0) {
+                foreach ($mentorSchedules as $item){
+                    switch ($item->day){
+                        case 'sunday':
+                            $day_name = 'Воскресенье';
+                            break;
+                        case 'monday':
+                            $day_name = 'Понедельник';
+                            break;
+                        case 'tuesday':
+                            $day_name = 'Вторник';
+                            break;
+                        case 'wednesday':
+                            $day_name = 'Среда';
+                            break;
+                        case 'thursday':
+                            $day_name = 'Четверг';
+                            break;
+                        case 'friday':
+                            $day_name = 'Пятница';
+                            break;
+                        case 'saturday':
+                            $day_name = 'Суббота';
+                            break;
+                        default:
+                            $day_name = $item->day;
+                            break;
+                    }
+                    $item->day_name = $day_name;
+                }
                 $obj = ["Status" => true, "success" => 1, "data" => ["mentorSchedules" => $mentorSchedules], "msg" => "Successfully Found Mentor Schedule Days"];
                 return response()->json($obj);
             } else {
@@ -445,6 +474,9 @@ class MentorScheduleController extends Controller
                     ['day' => 'Понедельник', 'is_holiday' => 1], ['day' => 'Вторник', 'is_holiday' => 1], ['day' => 'Среда', 'is_holiday' => 1], ['day' => 'Четверг', 'is_holiday' => 1]
                     , ['day' => 'Пятница', 'is_holiday' => 1], ['day' => 'Суббота', 'is_holiday' => 1], ['day' => 'Воскресенье', 'is_holiday' => 1],
                 ];
+                foreach ($created as $item){
+                    $item['day_name'] = $item['day'];
+                }
                 $obj = ["Status" => true, "success" => 1, "data" => ["mentorSchedules" => $created], "msg" => "Successfully Found Mentor Schedule Days"];
 
                 return response()->json($obj);
@@ -476,8 +508,8 @@ class MentorScheduleController extends Controller
                 return response()->json($obj);
             } else {
                 $created = [
-                    ['day' => 'Понедельник', 'is_holiday' => 0], ['day' => 'Вторник', 'is_holiday' => 0], ['day' => 'Среда', 'is_holiday' => 0], ['day' => 'Четверг', 'is_holiday' => 0]
-                    , ['day' => 'Пятница', 'is_holiday' => 0], ['day' => 'Суббота', 'is_holiday' => 0], ['day' => 'Воскресенье', 'is_holiday' => 0],
+                    ['day' => 'monday', 'locale_day' => 'Понедельник', 'is_holiday' => 0], ['day' => 'tuesday', 'locale_day' => 'Вторник', 'is_holiday' => 0], ['day' => 'wednesday','locale_day' => 'Среда', 'is_holiday' => 0], ['day' => 'tuesday', 'locale_day' => 'Четверг', 'is_holiday' => 0]
+                    , ['day' => 'friday', 'locale_day' => 'Пятница', 'is_holiday' => 0], ['day' => 'saturday', 'locale_day' => 'Суббота', 'is_holiday' => 0], ['day' => 'sunday', 'locale_day' => 'Воскресенье', 'is_holiday' => 0],
                 ];
                 $obj = ["Status" => true, "success" => 1, "data" => ["mentorSchedules" => $created], "msg" => "Successfully Found Mentor Schedule Days"];
 

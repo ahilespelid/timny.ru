@@ -421,6 +421,7 @@
                                             </div>
                                             <div
                                                 class="col-md-6 position-relative"
+                                                v-if="false"
                                             >
                                                 <label
                                                     for=""
@@ -543,7 +544,7 @@
                                                     {{ errors.dob[0] }}
                                                 </p>
                                             </div>
-                                            <div
+                                            <div v-if="false"
                                                 class="col-md-6 position-relative"
                                             >
                                                 <label
@@ -602,7 +603,7 @@
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div
+                                            <div  v-if="false"
                                                 class="col-md-6 position-relative"
                                             >
                                                 <label
@@ -657,7 +658,7 @@
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div
+                                            <div  v-if="false"
                                                 class="col-md-6 position-relative"
                                             >
                                                 <label
@@ -752,7 +753,7 @@
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div
+                                            <div v-if="false"
                                                 class="col-md-6 position-relative"
                                             >
                                                 <label
@@ -3784,15 +3785,15 @@ export default {
             formData.append("first_name", this.profile.first_name);
             formData.append("last_name", this.profile.last_name);
             //   formData.append("email", this.profile.email);
-            formData.append("address", this.profile.address);
+            //formData.append("address", this.profile.address);
             formData.append("father_name", this.profile.f_name);
-            formData.append("cnic", this.profile.cnic);
+            //formData.append("cnic", this.profile.cnic);
             formData.append("gender", this.profile.gender);
-            formData.append("religion", this.profile.religion);
+            //formData.append("religion", this.profile.religion);
             formData.append("dob", this.profile.dob);
             formData.append("occupation", this.profile.occupation);
-            formData.append("country", this.profile.country);
-            formData.append("city", this.profile.city);
+            //formData.append("country", this.profile.country);
+            //formData.append("city", this.profile.city);
             formData.append("about", this.profile.about);
             this.errors = {};
             //   console.log(formData);

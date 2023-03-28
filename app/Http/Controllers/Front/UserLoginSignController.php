@@ -325,14 +325,14 @@ class UserLoginSignController extends Controller
                     'last_name' => 'required|string',
                     'mentor_id' => 'required',
                     'father_name' => 'required|string',
-                    'cnic' => 'required',
-                    'address' => 'required|string',
+                    //'cnic' => 'required',
+                    //'address' => 'required|string',
                     'gender' => 'required|string',
-                    'religion' => 'required|string',
+                    //'religion' => 'required|string',
                     'dob' => 'required',
                     'occupation' => 'required',
-                    'country' => 'required',
-                    'city' => 'required|string',
+                    //'country' => 'required',
+                    //'city' => 'required|string',
                     'about' => 'required|string',
                     // 'email' => 'required|unique:users,email,' . $id . ',id|string',
 
@@ -373,14 +373,14 @@ class UserLoginSignController extends Controller
             $first_name = $request->first_name;
             $last_name = $request->last_name;
             $father_name = $request->father_name;
-            $cnic = $request->cnic;
-            $address = $request->address;
+            //$cnic = $request->cnic;
+            //$address = $request->address;
             $gender = $request->gender;
-            $religion = $request->religion;
+            //$religion = $request->religion;
             $dob = date('Y-m-d', strtotime($request->dob));
             $occupation = $request->occupation;
-            $country = $request->country;
-            $city = $request->city;
+            //$country = $request->country;
+            //$city = $request->city;
             $email = $request->email;
             $about = $request->about;
 
@@ -389,14 +389,14 @@ class UserLoginSignController extends Controller
             $user->first_name = $first_name;
             $user->last_name = $last_name;
             $user->father_name = $father_name;
-            $user->cnic = $cnic;
-            $user->address = $address;
+            //$user->cnic = $cnic;
+            //$user->address = $address;
             $user->gender = $gender;
-            $user->religion = $religion;
+            //$user->religion = $religion;
             $user->dob = date('Y-m-d', strtotime($dob));
             $user->occupation = $occupation;
-            $user->country = $country;
-            $user->city = $city;
+            //$user->country = $country;
+            //$user->city = $city;
             $user->about=$about;
             if($email){
                 $user->email = $email;

@@ -6,6 +6,7 @@ use App\Http\Controllers\PaymentGateway\Moneta\Moneta;
 use App\Models\BookAppointment;
 use App\Models\MeetingConfirmation;
 use App\Models\MeetingConflict;
+use App\Models\NewTransaction;
 use App\Models\User;
 use Bavix\Wallet\Models\Transaction;
 use Exception;
@@ -83,8 +84,15 @@ class MeetingConfirmationController extends Controller
     public static function MeetConfirmed(BookAppointment $appointment){
         $appointment_exist = $appointment;
         $user = User::find($appointment_exist->mentor_id);
-        $transaction = Transaction::find($appointment_exist->payment_id);
-        $user->confirm($transaction);
+//        $transaction = Transaction::find($appointment_exist->payment_id);
+//        $user->confirm($transaction);
+
+        $transaction = NewTransaction::where('book_appointment_id', $appointment->id)->first();
+        if($transaction){
+            $transaction->status = 'done';
+            $transaction->save();
+        }
+
         $appointment_exist->update(['appointment_status'=>2]);
     }
 
@@ -142,10 +150,13 @@ class MeetingConfirmationController extends Controller
      * @throws Exception
      */
     public static function CancelMeeting(BookAppointment $appointment){
-        if($appointment->is_paid && $appointment->payment_id != null){
-            $transaction = Transaction::find($appointment->payment_id);
-            //Moneta::returnByOperationId($transaction->meta['MNT_OPERATION_ID']);
+        $transaction = NewTransaction::where('book_appointment_id', $appointment->id)->first();
+        if($transaction && $appointment->is_paid && $appointment->payment_id != null){
+            Moneta::returnByOperationId($transaction->operation_id);
+        $transaction->status = 'returning';
+        $transaction->save();
         }
+
         $appointment->appointment_status = 3;
         $appointment->is_paid = 0;
         $appointment->save();

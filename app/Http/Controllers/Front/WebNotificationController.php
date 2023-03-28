@@ -7,13 +7,18 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Validator;
 use App\Models\UserFcmToken;
+use App\Models\Notification;
+
 class WebNotificationController extends Controller
 {
 
 
     public function index()
     {
-        return view('notification');
+        $notifications = Notification::where('user_id', auth()->user()->id)
+            ->orderBy('id', 'desc')->take(10)
+            ->get();
+        return ($notifications);
     }
     public function getUserToken(Request $request){
         $validator = Validator::make($request->all(), [
@@ -80,6 +85,16 @@ class WebNotificationController extends Controller
         }
         $token="123";
         if ($request->token==$token){
+            $notification = Notification::create([
+                'token'      => $request->token,
+                'user_id'    => $request->user_id,
+                'body'       => $request->body,
+                'title'      => $request->title,
+                'link'       => $request->link,
+                'created_at' => request('name'),
+            ]);
+
+
             $url = 'https://fcm.googleapis.com/fcm/send';
             $FcmToken = UserFcmToken::where('user_id',$request->user_id)->whereNotNull('device_key')->pluck('device_key')->toArray();
             //old

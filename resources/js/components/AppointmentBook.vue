@@ -46,9 +46,9 @@
             </div>
         </div>
         <div class="col-md-12 ps-4" v-if="showPayment && !loading">
-            <h5 class="text-primary mt-lg-0 mt-5">Выберите метод оплаты</h5>
+            <h5 class="text-primary mt-lg-0 mt-5" v-if="false">Выберите метод оплаты</h5>
             <div class="payment-card mt-3">
-                <ul class="d-inline-flex ps-0" type="none" v-if="payment_methods.length > 0">
+                <ul class="d-inline-flex ps-0" type="none" v-if="false && payment_methods.length > 0">
                     <li v-for="pm in payment_methods" class="pe-2">
                         <div class="
                 card
@@ -321,15 +321,20 @@
                 </div>
             </div>
             -->
-            <iframe v-show="moneta.visible" width="600" height="800" :src="moneta.src"></iframe>
+
+            <button class="btn btn-graish me-2 text-white" @click="$emit('cancelAppointment')">
+                <i class="fa-solid fa-angles-left me-1"></i>
+                Назад
+            </button>
+            <iframe v-show="moneta.visible" width="600" height="600" :src="moneta.src"></iframe>
             <div class="d-flex pt-5 justify-content-end align-items-center">
-                <button class="btn btn-graish me-2 text-white" @click="$emit('cancelAppointment')">
+                <button v-if="0" class="btn btn-graish me-2 text-white" @click="$emit('cancelAppointment')">
                     <i class="fa-solid fa-angles-left me-1"></i>
                     Назад
                 </button>
                 <!-- data-bs-toggle="modal"
           data-bs-target="#exampleModal" -->
-                <button class="btn btn-secondary text-white" @click="makePayment">
+                <button v-if="0" class="btn btn-secondary text-white" @click="makePayment">
                     Оплатить
                     <i class="fa-solid fa-angles-right ms-1"></i>
                 </button>
@@ -480,10 +485,11 @@ export default {
                             this.showAppointmentSection = true;
                             window.location.href = this.url + "/mentee/appointment-log"
                         } else {
-                            //this.showPayment = true;
-                            self.makePayment();
+                            this.showPayment = true;
+                            //self.makePayment();
                             this.showAppointmentSection = false;
                             this.fetchPaymentMethods();
+                            this.makePayment();
                         }
                         $("#exampleModalToggle2").modal("show");
                         self.formData.questions = [];
@@ -796,23 +802,21 @@ export default {
 
                     });
             } else if (this.payment_method === 'moneta') {
-                body.redirectAfterConfirm = 'https://timny.ru/mentee/appointment-log';
+                body.redirectAfterConfirm = 'https://timny.ru/mentee/appointment-log-detail/'+appointmentID;
                 const res = await axios
                     .post("/api/Moneta/getPaymentFormLink", body, {
                         headers: headers,
                     }).then((res) => {
                         console.log(res.data);
                             this.loading = false;
-                            //moneta.src = res.data;
-                            //moneta.visible = true;
+                            moneta.src = res.data;
+                            moneta.visible = true;
                             //window.location.href = res.data;
-                        var assistant = new Assistant.Builder();
-                        assistant.build(res.data);
-                        assistant.setOnSuccessCallback(function(operationId, transactionId) {
-                            // todo: здесь можно сделать что угодно – например,
-                            // перенаправить на другую страницу:
-                            location.replace("/mentee/appointment-log");
-                        });
+                        // var assistant = new Assistant.Builder();
+                        // assistant.build(res.data);
+                        // assistant.setOnSuccessCallback(function(operationId, transactionId) {
+                        //     location.replace("/mentee/appointment-log");
+                        // });
                     })
                     .catch((error) => {
 
@@ -892,6 +896,7 @@ export default {
     },
     mounted() {
         this.formData.mentee_id = this.User.user_id;
+
     },
 };
 </script>

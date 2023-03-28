@@ -1303,9 +1303,12 @@
 </template>
 <script>
 import loginMixin from "../mixins/loginMixin.js";
+import DateTimeConverter from "../mixins/DateTimeConverter.js";
+
+
 export default {
   props: ["url", "currency_symbol"],
-  mixins: [loginMixin],
+  mixins: [loginMixin, DateTimeConverter],
   data() {
     return {
       allPendingAppointments: [],
@@ -1366,6 +1369,28 @@ export default {
     },
   },
   methods: {
+      getDate(date){
+          if(!date) return '';
+          date = new Date(date);
+
+          var options = {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+          };
+
+          return date.toLocaleString("ru", options);
+      },
+      getTime(time){
+          time = new Date(time);
+
+          var options = {
+              hour: 'numeric',
+              minute: 'numeric',
+          };
+
+          return time.toLocaleString("ru", options);
+      },
     allAppointmentsChange(pInfo) {
       this.allAppointmentsFilter.splice(0, this.allAppointmentsFilter.length);
       let start = 0;
@@ -1458,7 +1483,6 @@ export default {
         this.loading = false;
       }
     },
-
     async fetchCompletedAppointments() {
       this.loading = true;
       const params = {
@@ -1619,7 +1643,7 @@ export default {
             toast.success(res.data.msg);
 
             this.sendAcceptedAppointmentNotification(
-              this.allPendingAppointmentsFilter[index].mentee_id
+              this.allPendingAppointmentsFilter[index]
             );
             this.sendAcceptedAppointmentSms(
               this.allPendingAppointmentsFilter[index].mentee.phone
@@ -1643,9 +1667,9 @@ export default {
       const res = await axios
         .get("/api/cancelAppointment/"+id)
         .then((res) => {
-            toast.success(res.data.msg);
+            toast.success('Встреча отменена');
             this.sendRejectedAppointmentNotification(
-              this.allPendingAppointmentsFilter[index].mentee_id
+              this.allPendingAppointmentsFilter[index]
             );
               this.sendRejectedAppointmentSms(
                this.allPendingAppointmentsFilter[index].mentee.phone
@@ -1659,10 +1683,10 @@ export default {
     async sendAcceptedAppointmentNotification(mentee_id) {
       const params = {
         token: 123,
-        user_id: mentee_id,
+        user_id: mentee_id.mentee_id,
         body: "Нажмите здесь, чтобы увидеть вашу встречу",
         title: "Ваша встреча принята.",
-        link: "/mentor/appointment/log/",
+        link: "/mentor/appointment-log-detail/"+mentee_id.id,
       };
       const res = await axios
         .post("/api/send-web-notification", params)
@@ -1671,10 +1695,10 @@ export default {
     async sendRejectedAppointmentNotification(mentee_id) {
       const params = {
         token: 123,
-        user_id: mentee_id,
+        user_id: mentee_id.mentee_id,
         body: "Нажмите здесь, чтобы увидеть вашу встречу",
         title: "Ваше назначение отклонено.",
-        link: "/mentor/appointment/log/",
+        link: "/mentor/appointment-log-detail/"+mentee_id.id,
       };
       const res = await axios
         .post("/api/send-web-notification", params)
@@ -1727,6 +1751,6 @@ export default {
      this.fetchPendingAppointments();
     // console.log(this.allPendingAppointmentsFilter);
     // console.log(this.allPendingAppointments);
-  },
+  }
 };
 </script>

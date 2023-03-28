@@ -20,6 +20,14 @@
  */
 
 /*!
+ * dist/inputmask
+ * https://github.com/RobinHerbots/Inputmask
+ * Copyright (c) 2010 - 2021 Robin Herbots
+ * Licensed under the MIT license
+ * Version: 5.0.7
+ */
+
+/*!
  * protobuf.js v6.10.0 (c) 2016, daniel wirtz
  * compiled wed, 15 jul 2020 23:34:13 utc
  * licensed under the bsd-3-clause license

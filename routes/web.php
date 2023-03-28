@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BlogCategoryController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\CommissionController;
 use App\Http\Controllers\Admin\ContactUsController;
+use App\Http\Controllers\PaymentGateway\Moneta\Moneta;
 use App\Http\Controllers\PaymentGateway\UKassa;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -93,7 +94,7 @@ Route::get('/signup', function () {
 Route::get('/login', function () {
     $url = URL::to('/');
     return view('login',compact('url'));
-});
+})->name('FrontendLogin');
 
 Route::get('/forgot-password', function () {
     $url = URL::to('/');
@@ -114,6 +115,7 @@ Route::get('/appointment-schedule/{id}/{appointmentid?}', function ($id,$appoint
       }
     return view('appointment-schedule',compact('url','mentor_id','routeLive'));
 });
+
 Route::get('/appointment-payment', function () {
     $url = URL::to('/');
     return view('appointment-payment',compact('url'));
@@ -121,7 +123,8 @@ Route::get('/appointment-payment', function () {
 Route::get('/wallet', function () {
     $url = URL::to('/');
     return view('wallet',compact('url'));
-});
+})->middleware(['auth.frontend']);
+
 Route::get('/mentor/appointment-log', function () {
     $url = URL::to('/');
     return view('appointment-log',compact('url'));
@@ -176,7 +179,7 @@ Route::get('/live/appointment/payment/{appointment_id}/{appointment_fee}', funct
 Route::get('/mentor-profile', function () {
     $url = URL::to('/');
     return view('mentor-profile',compact('url'));
-});
+})->middleware(['auth.frontend']);
 Route::get('/dashboard', function () {
     $url = URL::to('/');
     return view('dashboard',compact('url'));
@@ -475,3 +478,4 @@ Route::get('/completed-appointment-invoice/{appointment_id}', [AppointmentBookin
 Route::get('/pay', [FlutterWave::class, 'initialize'])->name('pay');
 // The callback url after a payment
 Route::get('/rave/callback', [FlutterWave::class, 'callback'])->name('callback');
+

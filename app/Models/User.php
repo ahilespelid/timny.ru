@@ -27,9 +27,9 @@ use Bavix\Wallet\Interfaces\Wallet;
 /**
  * @method static find(int $id)
  */
-class User extends Authenticatable implements Wallet, Confirmable
+class User extends Authenticatable // implements Wallet, Confirmable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasPermissionsTrait, HasWallet, CanConfirm;
+    use HasApiTokens, HasFactory, Notifiable, HasPermissionsTrait; //, HasWallet, CanConfirm;
 
     /**
      * The attributes that are mass assignable.

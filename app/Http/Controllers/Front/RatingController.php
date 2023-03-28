@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EasypaisaMerchant;
 use Illuminate\Http\Request;
 use App\Models\Rating;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Models\BookAppointment;
 use Illuminate\Support\Facades\Session;
@@ -14,14 +15,13 @@ class RatingController extends Controller
 {
 
     public function createRating(Request $request){
+        Log::debug('Установка рейтинга '.json_encode($request->all()));
         $validator = Validator::make($request->all(), [
             'mentee_id' => 'required',
             'mentor_id' => 'required',
             'rating'=>'required',
             'comments'=>'required|string',
             'appointment_id'=>'required'
-
-
         ]);
         if ($validator->fails()) {
 
@@ -49,6 +49,7 @@ class RatingController extends Controller
         $obj=["Status"=>false,"success"=>0,"msg"=>"Token Incorrect"];
         return response()->json($obj);
     }
+
     public function getRatings(Request $request){
         $validator = Validator::make($request->all(), [
             'mentor_id' => 'required',
@@ -140,7 +141,7 @@ class RatingController extends Controller
         $obj=["Status"=>false,"success"=>0,"msg"=>"Token Incorrect"];
         return response()->json($obj);
     }
-  
+
 
 
 }

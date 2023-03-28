@@ -4,7 +4,9 @@ namespace App\Http\Controllers\PaymentGateway\Moneta;
 
 use App\Http\Controllers\Controller;
 use App\Models\BookAppointment;
+use App\Models\NewTransaction;
 use App\Models\User;
+use Braintree\Test\Transaction;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +18,13 @@ class Moneta extends Controller
 
 {
     private const PROTOTYPE_ACCOUNT_ID = 45805242;
+    private const MASTER_PASSWORD = 249729261;
+
+    public function __construct(Request $request)
+    {
+        //TODO: Это самая настоящая дыра, убрать сразу после реализации нормальной аутентификации!
+        if (!Auth::check()) if (isset($request->user_id)) Auth::loginUsingId($request->user_id);
+    }
 
     /**
      * Создаёт счёт пользователя и сохраняет его номер в таблице
@@ -31,23 +40,25 @@ class Moneta extends Controller
                 'prototypeAccountId' => self::PROTOTYPE_ACCOUNT_ID,
                 'currency' => 'RUB',
                 'unitId' => $user->moneta['unit_id'],
+                'paymentPassword' => self::MASTER_PASSWORD,
+                'signature' => 'bKHSguefnjs',
             ]
         ]);
         $req = $CreateAccountRequest->send();
 
         $user->moneta['account_id'] = $req->Envelope->Body->CreateAccountResponse;
         $user->save();
-
     }
 
     /**
      * Возвращает состояние регистрации и идентификации пользователя
      * @return array
      */
-    public function getCondition()
+    public function getCondition(Request $request)
     {
         if (!Auth::check()) abort(401);
-        $user = User::where('id', Auth::id())->select(['id', 'moneta'])->first();
+        $user_id = Auth::id() ?? $request->user_id;
+        $user = User::where('id', $user_id)->select(['id', 'moneta'])->first();
         if($user->moneta == null){
             return [
                 'unit_id' => null,
@@ -57,7 +68,8 @@ class Moneta extends Controller
                 'error_str' => null,
                 'account_id' => null,
                 'asyncId' => null,
-                'profile_id' => null
+                'profile_id' => null,
+                'operation_id' => null,
             ];
         }
         return $user->moneta;
@@ -83,7 +95,8 @@ class Moneta extends Controller
                 'error_str' => null,
                 'account_id' => null,
                 'asyncId' => null,
-                'profile_id' => null
+                'profile_id' => null,
+                'operation_id' => null,
             ];
             $user->save();
         }
@@ -183,7 +196,7 @@ class Moneta extends Controller
         ]);
         $req = $SimplifiedIdentificationRequest->send();
 
-        if ($req->Envelope->Body->fault->detail->faultDetail == '500.7.11'){
+        if (isset($req->Envelope->Body->fault) && $req->Envelope->Body->fault->detail->faultDetail == '500.7.11'){
             $user->moneta['identification_status'] = 'identified';
         }else{
             $user->moneta['asyncId'] = $req->Envelope->Body->AsyncResponse->asyncId;
@@ -198,6 +211,7 @@ class Moneta extends Controller
     /**
      * Обрабатывает уведомления Монеты
      * @param Request $request
+     * @return string|void
      * @throws Exception
      */
     public function callbackNotify(Request $request){
@@ -242,6 +256,23 @@ class Moneta extends Controller
 
                 }
             }
+            if ($request->MNT_COMMAND){
+                switch ($request->MNT_COMMAND) {
+                    case 'CREDIT':
+                        $md = md5($request->MNT_ID.$request->MNT_TRANSACTION_ID.$request->MNT_OPERATION_ID.$request->MNT_AMOUNT.$request->MNT_CURRENCY_CODE.$request->MNT_SUBSCRIBER_ID.$request->MNT_TEST_MODE.'bKHSguefnjs');
+                        Log::channel('moneta')->debug('CB_PAYMENT_NOTIFY('.$md.'): '.json_encode($request->all()));
+
+                        if($request->addCardMode != null || $request->addCardMode == 1){
+                            Log::channel('moneta')->debug('Режим добавления карты');
+                            $user = User::where('moneta->account_id', $request->MNT_ID)->first();
+                            $user->moneta['operation_id'] = $request->MNT_OPERATION_ID;
+                            $user->save();
+                            Moneta::returnByOperationId($request->MNT_OPERATION_ID);
+                        }
+                        break;
+                }
+                return 'SUCCESS';
+            }
         }
     }
 
@@ -256,6 +287,7 @@ class Moneta extends Controller
         $SimplifiedIdentificationRequest = new MonetaRequest([
             'RefundRequest' => [
                 'transactionId' => $operation_id,
+                'paymentPassword' => self::MASTER_PASSWORD,
             ]
         ]);
         return $SimplifiedIdentificationRequest->send();
@@ -284,12 +316,24 @@ class Moneta extends Controller
                 'amount' => $request->withdrawSum,
                 'isPayerAmount' => true,
                 'operationInfo' => $operationInfo->toArray(),
-                'paymentPassword' => '249729261'
+                'paymentPassword' => self::MASTER_PASSWORD,
             ]
         ]);
         $response = $PaymentRequest->send();
         $attributes = collect($response->Envelope->Body->PaymentResponse->attribute)->pluck('value', 'key');
-        if($attributes['statusid'] == 'SUCCEED') $user->withdraw($attributes['sourceamountcompensation']);
+        if($attributes['statusid'] == 'SUCCEED'){
+            //$user->withdraw($attributes['sourceamounttotal']);
+
+            $transaction = new NewTransaction();
+            $transaction->recipient_id = $user->id;
+            $transaction->amount = $attributes['sourceamounttotal'];
+            $transaction->type = 'withdraw';
+            $transaction->status = 'processing';
+            $transaction->payment_object = json_encode($response);
+            $transaction->operation_id = $response->Envelope->Body->PaymentResponse->id;
+            $transaction->comment = 'Выплата ментору';
+            $transaction->save();
+        }
 
         return 'SUCCESS';
     }
@@ -297,33 +341,95 @@ class Moneta extends Controller
     /**
      * Возвращает параметры для формирования платёжной формы
      * @param Request $request
-     * @return array
+     * @return string
+     * @throws Exception
      */
-    public function getPaymentFormLink(Request $request): array
+    public function getPaymentFormLink(Request $request): string
     {
-        $validated = $request->validate([
-            'payment_method_code'  => 'required|exists:payment_methods,code|in:moneta',
-            'mentee_id'            => 'required|exists:users,id',
-            'total'                => 'required|int:min:0',
-            'plateForm'            => 'required|string',
-            'bookAppointmentId'    => 'required|exists:book_appointment,id',
-            'redirectAfterConfirm' => 'required|string',
-        ]);
+        //try{
+            $validated = $request->validate([
+                'total'                => 'required|int:min:0',
+                'bookAppointmentId'    => 'required|exists:book_appointment,id',
+            ]);
 
-        $bookAppointment = BookAppointment::find($request->bookAppointmentId);
-        $mentor = $bookAppointment->mentor;
-        $mentorName = $mentor->first_name . ' ' . $mentor->last_name;
-        $mentorName = trim($mentorName);
 
-        return [
-            'account' => 47005365,
-            'amount' => $request->total,
-            'transactionId' => $bookAppointment->id,
-            'testMode' => 0,
-            'description' => 'Оплата консультации у ' . $mentorName . ' на Timny.ru',
-            'customParams' => [
-                'mentor_id' => $mentor->id,
+            $bookAppointment = BookAppointment::find($request->bookAppointmentId);
+            $mentor = $bookAppointment->mentor;
+            $mentorName = $mentor->first_name . ' ' . $mentor->last_name;
+            $mentorName = trim($mentorName);
+            $account = $mentor->moneta['account_id'];
+            if($account == null) throw new Exception('Recipient payment account not found');
+
+            $operationInfo = new MonetaModel();
+            $operationInfo->setAttribute('SOURCETARIFFMULTIPLIER', '0.17');
+            if($request->redirectAfterConfirm){
+                $operationInfo->setAttribute('MNT_SUCCESS_URL', $request->redirectAfterConfirm);
+            }
+            $operationInfo->setAttribute('testMode', 0);
+
+
+
+            $PaymentRequest = new MonetaRequest([
+                'InvoiceRequest' => [
+                    'payee' => $account,
+                    'amount' => $request->total,
+                    'clientTransaction' => $bookAppointment->id,
+                    'description' => 'Оплата консультации у ' . $mentorName . ' на Timny.ru',
+                    'mnt_custom1' => $mentor->id,
+                    'operationInfo' => $operationInfo->toArray(),
+                ]
+            ]);
+
+            $response = $PaymentRequest->send();
+            $data['operationId'] = $response->Envelope->Body->InvoiceResponse->transaction;
+
+            $transaction = new NewTransaction();
+            $transaction->payer_id = $bookAppointment->mentee->id;
+            $transaction->recipient_id = $bookAppointment->mentor->id;
+            $transaction->amount = $request->total/100*80;
+            $transaction->customer_amount = $request->total;
+            $transaction->type = 'payment';
+            $transaction->status = 'processing';
+            $transaction->payment_object = json_encode($response);
+            $transaction->book_appointment_id = $bookAppointment->id;
+            $transaction->operation_id = $response->Envelope->Body->InvoiceResponse->transaction;
+            $transaction->comment = 'Оплата консультации у ' . $mentorName . ' на Timny.ru';
+            $transaction->save();
+
+            return 'https://www.moneta.ru/assistant.widget?'.http_build_query($data);
+
+
+//        return [
+//            'account' => 47005365,
+//            'amount' => $request->total,
+//            'transactionId' => $bookAppointment->id,
+//            'testMode' => 0,
+//            'description' => 'Оплата консультации у ' . $mentorName . ' на Timny.ru',
+//            'customParams' => [
+//                'mentor_id' => $mentor->id,
+//            ]
+//        ];
+//        }catch (Exception $e){
+//            $response = [];
+//            $response['error']['message'] = $e->getMessage();
+//            return json_encode($response);
+//        }
+
+    }
+
+    public function getAvailableBalance(){
+        $user = User::find(Auth::id());
+
+        $PaymentRequest = new MonetaRequest([
+            'FindAccountByIdRequest' => [
+                'value' => $user->moneta['account_id'],
+                'version' => 'VERSION_2',
             ]
-        ];
+        ]);
+        $response = $PaymentRequest->send();
+        $user->balance = $response->Envelope->Body->FindAccountByIdResponse->account->availableBalance;
+        $user->save();
+
+        return $response->Envelope->Body->FindAccountByIdResponse->account->availableBalance;
     }
 }

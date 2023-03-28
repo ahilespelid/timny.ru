@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Models\NewTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
@@ -74,17 +75,33 @@ class WalletController extends Controller
         }
         $token="123";
         if ($request->token==$token){
-            $transactions=Transaction::where('payable_id',$request->user_id)->orderBy('id','DESC')->get();
+            $user = User::find($request->user_id);
+            if($user->mentee){
+                $transactions = NewTransaction::where('payer_id', $request->user_id)->orderBy('id','DESC')->get();
+            }else{
+                $transactions = NewTransaction::where('recipient_id', $request->user_id)->orderBy('id','DESC')->get();
+            }
+            //$transactions = Transaction::where('payable_id',$request->user_id)->orderBy('id','DESC')->get();
+            $new_transactions = [];
             foreach($transactions as $transaction){
 
-                $date=date("Y-m-d", strtotime($transaction->created_at));
-                $time=date("h:i a", strtotime($transaction->created_at));
-                $transaction['date']=$date;
-                $transaction['time']=$time;
+                $new_transaction = [];
+                $new_transaction = (object) $new_transaction;
+                $new_transaction->id = $transaction->id;
+                $new_transaction->payable_id = $transaction->recipient_id;
+                $new_transaction->type = $transaction->type == 'withdraw' ? $transaction->type : 'deposit';
+                $new_transaction->amount = $transaction->amount;
+                $new_transaction->created_at = $transaction->created_at;
+                $new_transaction->updated_at = $transaction->updated_at;
+                $new_transactions[] = $new_transaction;
+//                $date = date("Y-m-d", strtotime($transaction->created_at));
+//                $time = date("h:i a", strtotime($transaction->created_at));
+//                $transaction['date'] = $date;
+//                $transaction['time'] = $time;
 
 
             }
-            $obj=["Status"=>true,"success"=>1,"data"=>['transactions'=>$transactions],"msg"=>"Successfully got Wallet Transactions"];
+            $obj=["Status"=>true,"success"=>1,"data"=>['transactions'=>$new_transactions],"msg"=>"Successfully got Wallet Transactions"];
             return response()->json($obj);
 
         }

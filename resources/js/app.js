@@ -4,12 +4,18 @@ import { Datetime } from 'vue-datetime'
  import AOS from 'aos'
  import 'aos/dist/aos.css'
  import VTooltip from 'v-tooltip'
- import Vue from 'vue'
+import { App, plugin } from '@inertiajs/inertia-vue'
+import Vue from 'vue'
  import i18n from '../js/utils/i18n.js'
  import VueChatScroll from 'vue-chat-scroll'
  import Page from 'v-page'
  import { BootstrapVue, BootstrapVueIcons } from 'bootstrap-vue'
  import { CarouselPlugin } from 'bootstrap-vue'
+
+Vue.use(plugin)
+
+
+
  Vue.use(CarouselPlugin)
  Vue.use(VueChatScroll);
  Vue.use(Page, { language : 'ru'});
@@ -88,6 +94,21 @@ Vue.component('view-questions-section', require('./components/screen/ViewQuestio
 Vue.component('dont-find-answer', require('./components/screen/DontFindAnswer.vue').default);
 Vue.component('datetime', Datetime);
 Vue.component('appointment-book', require('./components/AppointmentBook.vue').default);
+
+
+
+const el = document.getElementById('app')
+
+// const app = new Vue({
+//     el: '#app',
+//     render: h => h(App, {
+//         props: {
+//             initialPage: JSON.parse(el.dataset.page),
+//             resolveComponent: name => require(`./Pages/${name}`).default,
+//         },
+//     }),
+//     i18n
+// }).$mount(el)
 
 const app = new Vue({
     el: '#app',

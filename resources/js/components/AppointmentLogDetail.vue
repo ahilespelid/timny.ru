@@ -150,13 +150,13 @@
               <div class="row">
                 <div class="col-md-12">
                     <div class="pt-2" v-if="appointment.appointment_type_id!=3">
-                    <label class="text-primary"> Date: </label>
+                    <label class="text-primary"> Дата: </label>
                     <p>
                         {{appointment.date}}
                     </p>
                     </div>
                     <div class="pt-2" v-if="appointment.appointment_type_id!=3">
-                    <label class="text-primary"> Time: </label>
+                    <label class="text-primary"> Время: </label>
                     <p>
                         {{appointment.time}}
                     </p>
@@ -207,12 +207,19 @@
                     </p>
                   </div>
                    <div class="pt-2">
-                    <label class="text-primary" v-if="appointment.notes_consultant " > Notes : </label>
+                    <label class="text-primary" v-if="appointment.questions" > Вопрос: </label>
                     <p
-                    >{{appointment.notes_consultant }}
+                    >{{appointment.questions }}
                     </p>
 
                   </div>
+                    <div class="pt-2">
+                        <label class="text-primary" v-if="appointment.notes_consultant " > Заметки: </label>
+                        <p
+                        >{{appointment.notes_consultant }}
+                        </p>
+
+                    </div>
                   <div class="pt-2">
                     <label class="text-primary">
                         Приложение к заметкам
@@ -446,6 +453,28 @@ export default {
     };
   },
   methods: {
+      getDate(date){
+          if(!date) return '';
+          date = new Date(date);
+
+          var options = {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+          };
+
+          return date.toLocaleString("ru", options);
+      },
+      getTime(time){
+          time = new Date(time);
+
+          var options = {
+              hour: 'numeric',
+              minute: 'numeric',
+          };
+
+          return time.toLocaleString("ru", options);
+      },
     openFile(){
         window.open(this.image_view,'_blank');
     },
@@ -529,7 +558,7 @@ export default {
           body: "Нажмите здесь, чтобы увидеть вашу встречу",
           title: "Ваша встреча принята.",
           link:
-            "/mentor/appointment/log/",
+            "/mentor/appointment-log-detail/"+this.appointment_id,
         };
         const res = await axios
           .post("/api/send-web-notification", params)
@@ -543,7 +572,7 @@ export default {
           body: "Нажмите здесь, чтобы увидеть вашу встречу",
           title: "Ваше назначение отклонено.",
           link:
-            "/mentor/appointment/log/",
+            "/mentor/appointment-log-detail/"+this.appointment_id,
         };
         const res = await axios
           .post("/api/send-web-notification", params)
@@ -585,12 +614,21 @@ export default {
         .post("/api/mark-appointment-as-complete", params)
         .then((res) => {
             toast.success("Встреча завершена");
-            self.sendCompletedAppointmentNotification();
+            const params = {
+                token: 123,
+                user_id: this.mentee_id,
+                body: "Нажмите здесь, чтобы увидеть вашу встречу",
+                title: "Ваша встреча завершена.",
+                link:
+                    "/mentee/appointment-log-detail/"+this.appointment_id,
+            };
+            axios.post("/api/send-web-notification", params)
+                .then((res) => {});
             self.appointmentDetails();
             self.closeChat();
         });
     },
-     async sendCompletedAppointmentNotification()
+      sendCompletedAppointmentNotification()
     {
         const params = {
         token: 123,
@@ -598,10 +636,9 @@ export default {
           body: "Нажмите здесь, чтобы увидеть вашу встречу",
           title: "Ваша встреча завершена.",
           link:
-            "/mentee/appointment-log/",
+            "/mentee/appointment-log-detail/"+this.appointment_id,
         };
-        const res = await axios
-          .post("/api/send-web-notification", params)
+        axios.post("/api/send-web-notification", params)
           .then((res) => {});
     },
       showChat() {
@@ -681,7 +718,7 @@ export default {
     } else {
       this.user_role = "Mentee";
     }
-    this.fetchUserData();
+      this.fetchUserData();
   },
 };
 </script>

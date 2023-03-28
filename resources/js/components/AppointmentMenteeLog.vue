@@ -240,7 +240,7 @@
                       </td>
                       <td v-else>Mentor</td>
                       <!-- <td>{{ appointment.id }}</td> -->
-                      <td>{{ appointment.date }}</td>
+                      <td>{{appointment.date}}</td>
                       <td>{{ appointment.time }}</td>
                       <td>{{ appointment.appointment_type_string }}</td>
                       <td>
@@ -455,7 +455,7 @@
                       </td>
                       <td v-else>Mentor</td>
                       <!-- <td>{{ appointment.id }}</td> -->
-                      <td>{{ appointment.date }}</td>
+                      <td>{{appointment.date}}</td>
                       <td>{{ appointment.time }}</td>
                       <td>{{ appointment.appointment_type_string }}</td>
                       <td>
@@ -680,8 +680,8 @@
                       </td>
                       <td v-else>Mentor</td>
                       <!-- <td>{{ appointment.id }}</td> -->
-                      <td>{{ appointment.date }}</td>
-                      <td>{{ appointment.time }}</td>
+                      <td>{{appointment.date}}</td>
+                      <td>{{appointment.time }}</td>
                       <td>{{ appointment.appointment_type_string }}</td>
                       <td>
                         <span class="text-success fw-400"
@@ -897,7 +897,7 @@
                       </td>
                       <td v-else>Mentor</td>
                       <!-- <td>{{ appointment.id }}</td> -->
-                      <td>{{ appointment.date }}</td>
+                      <td>Дата {{appointment.date}}</td>
                       <td>{{ appointment.time }}</td>
                       <td>{{ appointment.appointment_type_string }}</td>
                       <td>
@@ -959,9 +959,7 @@
                             )
                           }}</a>
                            <a
-                          :href="`${
-                            url + '/completed-appointment-invoice/' + appointment.id
-                          }`"
+                          :href="appointment.receipt_url"
                           target="_blank"
                           class="btn btn-primary mb-md-0 mb-2 btn-sm"
                           >
@@ -1023,6 +1021,8 @@
 </template>
 <script>
 import loginMixin from "../mixins/loginMixin.js";
+import DateTimeConverter from '../mixins/DateTimeConverter.js';
+
 export default {
   props: ["url","currency_symbol"],
   mixins: [loginMixin],
@@ -1096,6 +1096,28 @@ export default {
     }
   },
   methods: {
+      getDate(date){
+          if(!date) return '';
+          date = new Date(date);
+
+          var options = {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+          };
+
+          return date.toLocaleString("ru", options);
+      },
+      getTime(time){
+          time = new Date(time);
+
+          var options = {
+              hour: 'numeric',
+              minute: 'numeric',
+          };
+
+          return time.toLocaleString("ru", options);
+      },
     async rescheduleAppointment(appointment_id,mentor_id,type){
     window.location.href=this.url+'/appointment-schedule/'+mentor_id+"/"+appointment_id;
     },
@@ -1267,7 +1289,6 @@ export default {
         this.loading = false;
       }
     },
-
     async selectedFilter() {
       this.loading = true;
       const params = {
