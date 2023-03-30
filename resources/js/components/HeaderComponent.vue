@@ -317,44 +317,7 @@
                 </div>
               </div>
 
-              <div
-                v-if="is_loggedIn"
-                class="
-                  dropdown navbar-nav
-                  me-2
-                  d-flex
-                  justify-content-center
-                  align-items-start
-                  align-items-lg-center
-                  lang-text
-                  text-dark navbar-nav
-                "
-              >
-                <a
-                  href="#"
-                  class="
-                    dropdown-toggle
-                    text-white
-                    d-flex
-                    px-2
-                    py-1
-                    justify-content-center
-                    align-items-center
-                  "
-                  data-bs-toggle="dropdown"
-                  @click="getNotificates()"
-                  >
-                  <span class="text-dark me-2">Уведомления</span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-end p-2 fw-500" style="width: 20vw;">
-                  <div style="border-bottom: 1px solid gray" v-for="notificate of notificates" :key="notificate.id">
-                    <a class="dropdown-item text-dark" :href="url + notificate.link">
-                      <div>{{ notificate.title }}</div>
-                      <div>{{ notificate.body }}</div>
-                    </a>
-                  </div>
-                </div>
-              </div>
+              <Notifications></Notifications>
             </ul>
           </div>
         </div>
@@ -364,15 +327,16 @@
 </template>
 <script>
 import loginMixin from "../mixins/loginMixin.js";
+import Notifications from "./Notifications.vue";
 export default {
   props: ["url","logo"],
+  components: { Notifications },
   mixins: [loginMixin],
   data(){
       return{
           locale: "",
         current_language: "",
         current_direction: "",
-        notificates: [],
       }
 
   },
@@ -417,10 +381,6 @@ export default {
         body.classList.add("lang_urdu");
       }
       localStorage.setItem("direction", this.current_direction);
-    },
-    async getNotificates() {
-      this.notificates = (await axios
-        .get("/push-notificaiton")).data
     },
     logout() {
       var toast = this.$toasted;
