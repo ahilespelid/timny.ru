@@ -1,6 +1,5 @@
 <template>
   <div
-    v-if="is_loggedIn"
     class="
       dropdown navbar-nav
       me-2
@@ -40,16 +39,13 @@
 </template>
 
 <script>
-  import loginMixin from "../mixins/loginMixin.js";
   export default {
-    mixins: [loginMixin],
-
     data () {
       return ({
         notificates: [],
       })
     },
-    
+
     methods: {
       async getNotificates() {
         this.notificates = (await axios

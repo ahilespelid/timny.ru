@@ -317,7 +317,7 @@
                 </div>
               </div>
 
-              <Notifications></Notifications>
+              <Notifications v-if="is_loggedIn"></Notifications>
             </ul>
           </div>
         </div>
