@@ -29,7 +29,7 @@
     </a>
     <div class="notifications dropdown-menu dropdown-menu-end p-2 fw-500" style="width: 20vw;">
       <div class="notificate" v-for="notificate of notificates" :key="notificate.id">
-        <a class="dropdown-item text-dark" style="white-space: normal;" :href="url + notificate.link">
+        <a class="dropdown-item text-dark" style="white-space: normal;" :href="notificate.link">
           <div>{{ notificate.title }}</div>
           <div>{{ notificate.body }}</div>
         </a>
