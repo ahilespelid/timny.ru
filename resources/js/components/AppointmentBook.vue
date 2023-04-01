@@ -5,6 +5,14 @@
             <div class="form-ask">
                 <form @submit="submitForm" enctype="multipart/form-data">
 
+                    <textarea name="" id="" rows="5" class="form-control w-100 border p-2 mt-3"
+                              :placeholder="$t('book_appointment.question.text_placeholder')"
+                              v-model="formData.questions" :class="errors && errors.questions ? 'border-danger' : ''"></textarea>
+                    <p v-if="errors && errors.questions" class="text-danger">
+
+                        {{ errors.questions[0] }}
+
+                    </p>
 
                     <img v-if="formData.image_view" :src="formData.image_view" height="80px" width="80px" class="mt-2"
                          @click="openFile"/>
@@ -17,15 +25,6 @@
                         <input type="file" id="book_file" ref="book_file" @change="processFile($event)"
                                name="book_file"/>
                     </div>
-
-                    <textarea name="" id="" rows="5" class="form-control w-100 border p-2 mt-3"
-                              :placeholder="$t('book_appointment.question.text_placeholder')"
-                              v-model="formData.questions" :class="errors && errors.questions ? 'border-danger' : ''"></textarea>
-                    <p v-if="errors && errors.questions" class="text-danger">
-
-                        {{ errors.questions[0] }}
-
-                    </p>
 
                     <div class="d-flex pt-5 justify-content-end align-items-center">
                         <button class="btn btn-graish me-2 text-white" @click="$emit('cancelAppointment')">
@@ -836,9 +835,9 @@ export default {
             const params = {
                 token: 123,
                 user_id: this.mentor_id,
-                body: "Click here to See your Appointment",
-                title: "New Appointment for You.",
-                link: "/mentor/appointment/log/",
+                body: "Нажмите, чтобы посмотреть",
+                title: "У Вас новая встреча",
+                link: "/mentor/appointment-log/",
             };
             const res = await axios
                 .post("/api/send-web-notification", params)

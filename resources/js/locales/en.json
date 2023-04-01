@@ -893,6 +893,7 @@
         }
     },
     "book_appointment": {
+        "appointment": "appointment",
         "title": "Consultant Detail",
         "sub_title": "View your Consultant detail and select date and time to book your appointment",
         "heading": "Select Date & Time",
@@ -909,6 +910,10 @@
         "afternoon": "Afternoon",
         "morning": "Morning",
         "slots_not_available": "Slots are Not Available",
+        "type": {
+            "video": "video",
+            "audio": "audio"
+        },
         "question": {
             "title": "Ask Your Question",
             "file_placeholder": "Upload File",

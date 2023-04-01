@@ -558,7 +558,7 @@ export default {
           body: "Нажмите здесь, чтобы увидеть вашу встречу",
           title: "Ваша встреча принята.",
           link:
-            "/mentor/appointment-log-detail/"+this.appointment_id,
+            "/mentey/appointment-log-detail/"+this.appointment_id,
         };
         const res = await axios
           .post("/api/send-web-notification", params)
@@ -569,10 +569,10 @@ export default {
         const params = {
         token: 123,
         user_id: this.mentee_id,
-          body: "Нажмите здесь, чтобы увидеть вашу встречу",
-          title: "Ваше назначение отклонено.",
+          body: "Нажмите, чтобы посмотреть",
+          title: "Ваша встреча отклонена.",
           link:
-            "/mentor/appointment-log-detail/"+this.appointment_id,
+            "/mentey/appointment-log-detail/"+this.appointment_id,
         };
         const res = await axios
           .post("/api/send-web-notification", params)

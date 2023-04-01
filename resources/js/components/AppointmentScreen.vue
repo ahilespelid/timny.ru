@@ -128,7 +128,7 @@
                     @click="changeAppointmentType(mentorDetails.without_schedule_types[1].appointment_type.name,
                     mentorDetails.without_schedule_types[1].appointment_type_id,mentorDetails.without_schedule_types[1].fee
                     )"
-                    v-if="mentorDetails.without_schedule_types.length > 0"
+                    v-if="false && mentorDetails.without_schedule_types.length > 0"
                     aria-selected="false"
                   >
                     <div class="d-flex align-items-center">
@@ -196,7 +196,7 @@
                         "
                       >
                         <p class="mb-0 text-capitalize">
-                          {{ schedule.appointment_type.name }}
+                          {{ $t('book_appointment.type.'+schedule.appointment_type.name) }}
                         </p>
                         <span class="text-muted">Оплата {{ schedule.fee }}</span>
                       </span>
@@ -258,12 +258,11 @@
                     <div class="row">
                       <div class="col-xl-8 col-md-7">
                         <h6 class="text-primary">
-                            Выберите Дату и Временные интервалы
+                            {{ $t('book_appointment.heading') }}
                           <span class="text-muted"
                             >({{
-                              schedule.appointment_type.name
-                            }}
-                            appointment)</span
+                              $t('book_appointment.type.'+schedule.appointment_type.name)+ ' ' + $t('book_appointment.appointment')
+                            }})</span
                           >
                         </h6>
                         <p class="mb-0 mt-3" v-if="selected_new_date">
@@ -288,11 +287,12 @@
                                             </button> -->
 
                         <DatePicker
-                        input-class="form-control bg-primary ps-4 text-white selectdate"
-                        :format="'dd-MM-yyyy'"
-                          :placeholder="'Select Date'"
+                          input-class="form-control bg-primary ps-4 text-white selectdate"
+                          :format="'dd-MM-yyyy'"
+                          :placeholder="$t('book_appointment.btn_date')"
                           v-model="selected_date"
                           :highlighted="hightlight_days"
+                          :language="dpLocale"
                           v-on:input="
                             fetchAvailableSlots(
                               $event,
@@ -536,6 +536,10 @@
 import loginMixin from "../mixins/loginMixin.js";
 import DatePicker from '@sum.cumo/vue-datepicker'
 import '@sum.cumo/vue-datepicker/dist/Datepicker.css'
+
+import * as dpLocales from '@sum.cumo/vue-datepicker/dist/locale/index.esm'
+
+
 export default {
   props: ["url", "mentor_id","route","liveRoute","appointmentid"],
   mixins: [loginMixin],
@@ -758,6 +762,11 @@ export default {
         // console.log(this.appointment_fee,this.appointment_id,this.type);
       }
     },
+  },
+  computed: {
+    dpLocale () {
+      return (dpLocales[this.$i18n.locale])
+    }
   },
   created() {
     console.log(this.liveRoute);
