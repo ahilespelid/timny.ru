@@ -1686,7 +1686,7 @@ export default {
         user_id: mentee_id.mentee_id,
         body: "Нажмите здесь, чтобы увидеть вашу встречу",
         title: "Ваша встреча принята.",
-        link: "/mentey/appointment-log-detail/"+mentee_id.id+"?g=1",
+        link: "/mentee/appointment-log-detail/"+mentee_id.id+"?g=1",
       };
       const res = await axios
         .post("/api/send-web-notification", params)
@@ -1698,7 +1698,7 @@ export default {
         user_id: mentee_id.mentee_id,
         body: "Нажмите, чтобы посмотреть",
         title: "Ваша встреча отклонена.",
-        link: "/mentey/appointment-log-detail/"+mentee_id.id+"?g=1",
+        link: "/mentee/appointment-log-detail/"+mentee_id.id+"?g=1",
       };
       const res = await axios
         .post("/api/send-web-notification", params)
