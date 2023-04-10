@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateNotificationsTable extends Migration
+class Verificator extends Migration
 {
     /**
      * Run the migrations.
@@ -13,14 +13,11 @@ class CreateNotificationsTable extends Migration
      */
     public function up()
     {
-        Schema::create('notifications', function (Blueprint $table) {
+        Schema::create('verificator', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('token');
-            $table->bigInteger('user_id')->unsigned();
-            $table->text('body');
-            $table->text('title');
-            $table->string('link');
-            $table->tinyInteger('send')->default('0');
+            $table->string('code')->nullable()->default(NULL);
+            $table->string('email')->nullable()->default(NULL);
+            $table->tinyInteger('status')->default('2');
             ///*/ $table->timestamp('read_at')->nullable(); ///*/
             $table->timestamps();
         });
@@ -33,6 +30,6 @@ class CreateNotificationsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('verificator');
     }
 }

@@ -9,17 +9,23 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\UserFcmToken;
 use App\Models\Notification;
 
-class WebNotificationController extends Controller
-{
+class WebNotificationController extends Controller{
+///*/ ahilespelid ///*/
+public function index(){
+    $notifications = Notification::where('user_id', auth()->user()->id)
+        ->orderBy('id', 'desc')->take(10)
+        ->get();
 
+    if(!empty($email = auth()->user()->email) && !empty($notifications)){foreach($notifications as $notification){
+            $mess='';
+            if(0 == $notification->send){
+                mail($email, 'timny.ru new notification: ', $mess = $email.' Dear '.auth()->user()->first_name.' '. auth()->user()->last_name.PHP_EOL.'your invisible notification on the site timny.ru: '.$notification->title.PHP_EOL.$notification->body);
+                $notification->send = 1; $notification->save();
+            } ///*/ $ret[] = ['id' => $notification->id, 'send' => $notification->send, 'title' => $notification->title, 'body' => $notification->body, 'mess' => (!empty($mess) ? $mess : '')]; ///*/
+    }}
+return ($notifications); /*/// ($ret); ///*/ }
+///*/ ahilespelid ///*/
 
-    public function index()
-    {
-        $notifications = Notification::where('user_id', auth()->user()->id)
-            ->orderBy('id', 'desc')->take(10)
-            ->get();
-        return ($notifications);
-    }
     public function getUserToken(Request $request){
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|string',

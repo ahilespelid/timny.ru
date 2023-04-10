@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use App\AgoraToken\Src\RtcTokenBuilder;
 use App\Models\MentorSchedule;
 use App\Models\Rating;
+use App\Models\Verificator;
 use App\Events\UserOnline;
 use App\Models\BookAppointment;
 use App\Models\MentorAssignCategory;
@@ -581,51 +582,50 @@ class UserLoginSignController extends Controller
         $obj = ["Status" => false, "success" => 0, "msg" => "Неверный токен"];
         return response()->json($obj);
     }
-
-    public function signup_email(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:8|confirmed'
-        ]);
-        if ($validator->fails()) {
-
-            $obj = ["Status" => false, "success" => 0, "errors" => $validator->errors()];
-            return response()->json($obj);
-        }
+///*/ ahilespelid ///*/
+public function signup_email(Request $request){
+    $validator = Validator::make($request->all(), [
+        'first_name' => 'required|string',
+        'last_name' => 'required|string',
+        'code' => 'nullable|string',
+        'email' => 'required|string|email|unique:users',
+        'password' => 'required|string|min:8|confirmed'
+    ]);
+    
+    $verificator = Verificator::firstOrCreate(['email' => $request->email],['email' => $request->email, 'code' => uniqid('SMS_'), 'status' => Verificator::STATUS_NO]);
+    
+    if($validator->fails()){
+        $obj = ["Status" => false, "success" => 0, "errors" => $validator->errors()];
+    }elseif($request->code !== $verificator->code){
+        mail($request->email, 'timny.ru code verificator', 'Dear '. $request->first_name . ' ' . $request->last_name . PHP_EOL . 'your code verefication for site timny.ru: ' . $verificator->code);
+        $obj = ['code' => true]; ///*/ json_encode(['code' => ['Code Wrong Write']])]; ///*/
+    }elseif($request->code === $verificator->code){
+        $verificator->status = 1; $verificator->save();        
         $user = new User([
             'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'fb_id'=>(empty($request->fb_id))? Null:$request->fb_id
-        ]);
-        $user->save();
-        // $user = $request->user();
+            'last_name'  => $request->last_name,
+            'email'      => $request->email,
+            'password'   => bcrypt($request->password),
+            'fb_id'      => (empty($request->fb_id)) ? null : $request->fb_id
+        ]);$user->save(); /*/// $user = $request->user(); ///*/
+        
         $tokenResult = $user->createToken('Personal Access Token');
-        $token = $tokenResult->token;
-        // if ($request->remember_me)
-        $token->expires_at = Carbon::now()->addWeeks(1);
-        $token->save();
-        if($request->role=="Mentor"){
-            Mentor::create(['user_id'=>$user->id]);
-        }else if($request->role=="Mentee"){
-            Mentee::create(['user_id'=>$user->id]);
-        }
+        $token = $tokenResult->token; /*/// if ($request->remember_me) ///*/ $token->expires_at = Carbon::now()->addWeeks(1); $token->save();
+        if('Mentor' == $request->role){Mentor::create(['user_id'=>$user->id]);}elseif('Mentee' == $request->role){Mentee::create(['user_id'=>$user->id]);}
+        
         $obj = [
-            "Status" => true, "success" => 1,
+            "Status"      => true, "success" => 1,
             'AccessToken' => $tokenResult->accessToken,
-            'token_type' => 'Bearer',
-            'expires_at' => Carbon::parse(
-                $tokenResult->token->expires_at
-            )->toDateTimeString(),
-            "data"=>["user"=>$user,'role'=>$request->role],
-            'msg'=>'Successfully Signup and Login'
+            'token_type'  => 'Bearer',
+            'expires_at'  => Carbon::parse($tokenResult->token->expires_at)->toDateTimeString(),
+            'data'        => ['user'=>$user, 'role'=>$request->role],
+            'msg'         => 'Successfully Signup and Login'
         ];
-        return response()->json($obj);
     }
+    
+return (!empty($obj)) ? response()->json($obj) : null;}
+///*/ ahilespelid ///*/    
+
     public function login_email(Request $request)
     {
         $validator = Validator::make($request->all(), [
